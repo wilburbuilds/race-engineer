@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Race Engineer</title>
+<style>
+  :root {
+    --bg: #0b0e14; --panel: #12161e; --panel-2: #181d27; --line: #262d3a; --line-soft: #1c222d;
+    --text: #edeff3; --muted: #8a93a5; --dim: #5c6577;
+    --ref: #57c7f5; --cmp: #ff9f43; --purple: #b15cff; --green: #37d67a; --red: #ff4a4a; --yellow: #ffd447;
+    --throttle: #37d67a; --brake: #ff4a4a; --steer: #d9b8ff;
+    --font-num: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --font: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--ref); outline-offset: 2px; }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+
+  /* top bar */
+  #top { flex: 0 0 auto; display: flex; align-items: stretch; border-bottom: 1px solid var(--line); background: var(--panel); }
+  #brand { padding: 10px 18px; border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; min-width: 190px; }
+  #brand .title { font-family: var(--font-num); font-size: 20px; font-weight: 600; letter-spacing: 0.04em; line-height: 1; }
+  #brand .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  #sessline { display: flex; align-items: center; gap: 22px; padding: 0 18px; flex: 1; color: var(--muted); }
+  #sessline b { color: var(--text); font-weight: 600; }
+  #conn { display: flex; align-items: center; gap: 8px; padding: 0 18px; border-left: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+  #pick { display: flex; align-items: center; padding: 0 12px; border-left: 1px solid var(--line); }
+  #pick select { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 6px 8px; font: inherit; font-size: 13px; max-width: 340px; }
+  #conn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); }
+  #conn.on .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  #conn.stale .dot { background: var(--yellow); }
+
+  /* tabs */
+  #tabs { overflow-x: auto; }
+  #tabs button { white-space: nowrap; }
+  .compare-note { color: var(--muted); margin: 12px 0; line-height: 1.5; }
+  .compare-table td, .compare-table th { padding: 11px 12px; }
+  .compare-table th { text-align: left; }
+  .compare-table td:nth-child(2) { color: var(--ref); }
+  .compare-table td:nth-child(3) { color: var(--cmp); }
+  .compare-table .section td { color: var(--muted); background: var(--panel-2); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  .compare-scroll { overflow-x: auto; }
+
+  #tabs { flex: 0 0 auto; display: flex; border-bottom: 1px solid var(--line); background: var(--panel); padding: 0 8px; }
+  #tabs button { padding: 10px 14px; color: var(--muted); border-bottom: 2px solid transparent; font-family: var(--font-num); font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
+  #tabs button:hover { color: var(--text); }
+  #tabs button.active { color: var(--text); border-bottom-color: var(--ref); }
+
+  /* layout */
+  #layout { flex: 1 1 auto; display: flex; min-height: 0; }
+  #tower { flex: 0 0 330px; border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+  #tower .head { display: grid; grid-template-columns: 34px 1fr 62px 62px 62px 30px; gap: 4px; padding: 8px 10px 6px; color: var(--dim); font-size: 11px; border-bottom: 1px solid var(--line-soft); }
+  #tower .rows { overflow-y: auto; flex: 1; }
+  #tower .sep { padding: 10px 10px 4px; color: var(--dim); font-size: 11px; border-bottom: 1px solid var(--line-soft); }
+  .laprow { display: grid; grid-template-columns: 34px 1fr 62px 62px 62px 30px; gap: 4px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line-soft); cursor: pointer; font-family: var(--font-num); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .laprow:hover { background: var(--panel-2); }
+  .laprow .n { color: var(--muted); }
+  .laprow .t { font-weight: 600; }
+  .laprow .s { color: var(--muted); font-size: 14px; }
+  .laprow .s.purple { color: var(--purple); }
+  .laprow .s.green { color: var(--green); }
+  .laprow.invalid .t { color: var(--dim); text-decoration: line-through; }
+  .laprow.live .t { color: var(--yellow); }
+  .laprow .vs { font-size: 11px; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; text-align: center; }
+  .laprow .vs:hover { color: var(--cmp); border-color: var(--cmp); }
+  .laprow.ref { box-shadow: inset 3px 0 0 var(--ref); }
+  .laprow.cmp { box-shadow: inset 3px 0 0 var(--cmp); }
+  .laprow.ref.cmp { box-shadow: inset 3px 0 0 var(--ref), inset 6px 0 0 var(--cmp); }
+  #tower .legend { padding: 8px 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; display: flex; gap: 14px; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+
+  #content { flex: 1 1 auto; overflow: auto; padding: 16px 20px 70px; }
+  .empty { color: var(--muted); padding: 40px; text-align: center; font-size: 15px; }
+  .empty b { color: var(--text); }
+
+  /* tiles */
+  .grid { display: grid; gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line-soft); padding: 12px 14px; }
+  .tile .lbl { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .tile .val { font-family: var(--font-num); font-size: 30px; font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .tile .val small { font-size: 15px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+  .tile .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .hero { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .hero .big .val { font-size: 64px; }
+  .sectors { display: flex; gap: 8px; margin-top: 8px; }
+  .sector { flex: 1; padding: 6px 8px; border: 1px solid var(--line); font-family: var(--font-num); font-size: 18px; font-variant-numeric: tabular-nums; }
+  .sector .lbl { font-size: 11px; color: var(--muted); }
+  .sector.purple { border-color: var(--purple); color: var(--purple); }
+  .sector.green { border-color: var(--green); color: var(--green); }
+  .sector.yellow { border-color: var(--yellow); color: var(--yellow); }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+
+  .car4 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .wheel { padding: 8px; background: var(--panel-2); font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+  .wheel .w { font-size: 11px; color: var(--muted); }
+  .wheel .v { font-size: 22px; font-weight: 600; }
+  .wheel .v small { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: var(--line); margin-top: 6px; }
+  .bar > i { display: block; height: 100%; background: var(--ref); }
+
+  /* charts */
+  .chart { background: var(--panel); border: 1px solid var(--line-soft); margin-bottom: 10px; }
+  .chart .head { display: flex; align-items: baseline; gap: 16px; padding: 8px 12px 0; }
+  .chart .head .name { font-family: var(--font-num); font-size: 15px; letter-spacing: 0.03em; }
+  .chart .head .read { color: var(--muted); font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .chart .head .read b { font-weight: 600; }
+  .chart canvas { display: block; width: 100%; }
+  #scrub { position: sticky; bottom: 0; background: var(--panel); border: 1px solid var(--line); padding: 10px 14px; display: flex; align-items: center; gap: 14px; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+  #scrub input[type=range] { flex: 1; accent-color: var(--ref); }
+  #scrub .d { min-width: 90px; color: var(--muted); }
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; color: var(--muted); flex-wrap: wrap; }
+  .toolbar select, .toolbar input { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 5px 8px; font: inherit; }
+  .chip { padding: 3px 8px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+  .chip.ref { border-color: var(--ref); color: var(--ref); } .chip.cmp { border-color: var(--cmp); color: var(--cmp); }
+  button.chip:hover { border-color: var(--ref); color: var(--ref); }
+
+  table { border-collapse: collapse; width: 100%; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 15px; }
+  th { text-align: left; color: var(--dim); font-weight: 500; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line); font-family: var(--font); }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  tr.sel td { background: var(--panel-2); }
+  tr.click { cursor: pointer; } tr.click:hover td { background: var(--panel-2); }
+  td.purple { color: var(--purple); } td.green { color: var(--green); } td.red { color: var(--red); } td.muted { color: var(--muted); }
+  .mapwrap { background: var(--panel); border: 1px solid var(--line-soft); padding: 10px 12px 12px; margin-bottom: 12px; }
+  .mapwrap .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  .mapwrap .head .name { font-family: var(--font-num); font-size: 15px; letter-spacing: 0.03em; }
+  .mapwrap .head .hint { color: var(--dim); font-size: 12px; }
+  .maprow { display: grid; grid-template-columns: minmax(320px, 1.15fr) 1fr; gap: 14px; align-items: start; }
+  #trackmap { display: block; width: 100%; cursor: pointer; }
+  .cornerinfo { border-left: 1px solid var(--line-soft); padding-left: 14px; }
+  .cornerinfo h3 { font-family: var(--font-num); font-size: 20px; margin: 0 0 2px; letter-spacing: 0.02em; }
+  .cornerinfo .sub { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+  .cornerinfo table { font-size: 14px; }
+  .cornerinfo td, .cornerinfo th { padding: 5px 6px; }
+  .best { color: var(--purple); }
+  .rename { color: var(--dim); margin-left: 8px; font-size: 12px; opacity: 0; }
+  tr:hover .rename { opacity: 1; }
+  .rename:hover { color: var(--ref); }
+  input.cname { background: var(--panel-2); color: var(--text); border: 1px solid var(--ref); padding: 3px 6px; font: inherit; font-family: var(--font); font-size: 14px; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; font-size: 14px; }
+  .kv div:nth-child(odd) { color: var(--muted); }
+  h2 { font-family: var(--font-num); font-size: 17px; font-weight: 600; letter-spacing: 0.03em; margin: 18px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .events { list-style: none; margin: 0; padding: 0; color: var(--muted); }
+  .events li { padding: 4px 0; border-bottom: 1px solid var(--line-soft); }
+  .events li .num { color: var(--dim); margin-right: 10px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header id="top">
+  <div id="brand"><div class="title">RACE ENGINEER</div><div class="sub" id="brandsub">waiting for the game</div></div>
+  <div id="sessline"></div>
+  <div id="pick"><select id="sesspick" title="open a saved session"><option value="">Live</option></select></div>
+  <div id="conn"><span class="dot"></span><span id="conntext">connecting</span></div>
+</header>
+<nav id="tabs"></nav>
+<div id="layout">
+  <aside id="tower">
+    <div class="head"><span>Lap</span><span>Time</span><span>S1</span><span>S2</span><span>S3</span><span></span></div>
+    <div class="rows" id="towerrows"></div>
+    <div class="legend"><span><i class="sw" style="background:var(--ref)"></i>reference</span><span><i class="sw" style="background:var(--cmp)"></i>compare</span><span><i class="sw" style="background:var(--purple)"></i>best sector</span></div>
+  </aside>
+  <main id="content"></main>
+</div>
+
+<script>
+'use strict';
+// ============================================================================ state
+const S = {
+  live: null, laps: [], currentLap: 0, traceLaps: [], session: null,
+  traces: new Map(),          // lap number -> Trace
+  ref: null, cmp: null,       // selected lap numbers (ref = A, cmp = B)
+  autoRef: true,              // follow the best lap until the user picks one
+  cursor: null,               // distance (m) of the cursor / scrubber
+  tab: 'live', opponent: null, comparisonSession: null, corner: 0, cornerList: [],
+  lastRender: 0, liveDirty: true, dataDirty: true, lastTraceFetch: 0, lapsKey: '',
+  mode: 'live', savedId: '', sessions: [],
+  cornerNames: [], cornerPreset: [], cornerShift: 0, hasPreset: false, cornerNamesTrack: null, editingCorner: null,
+};
+const isSaved = () => S.mode === 'saved';
+function sessInfo() { return S.session; }                                   // session.json style info (live or saved)
+function liveSess() { return isSaved() ? null : (S.live?.session || null); }
+const TABS = [['live', 'Live'], ['compare', 'You vs others'], ['laps', 'Laps'], ['speed', 'Speed'], ['steer', 'Steering & gear'], ['tyres', 'Tyres'],
+              ['brakes', 'Brakes & ERS'], ['corner', 'Corners'], ['session', 'Session']];
+// Column layouts live on each Trace (sessions recorded by older versions have fewer columns).
+
+// ============================================================================ helpers
+const $ = (sel, root = document) => root.querySelector(sel);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+function fmtLap(ms) { if (!ms || ms <= 0) return '--'; ms = Math.round(ms); const m = Math.floor(ms / 60000), s = Math.floor(ms % 60000 / 1000), t = ms % 1000; return m ? `${m}:${String(s).padStart(2, '0')}.${String(t).padStart(3, '0')}` : `${s}.${String(t).padStart(3, '0')}`; }
+function fmtDelta(ms, digits = 3) { if (ms == null || isNaN(ms)) return '--'; const s = ms / 1000; return (s >= 0 ? '+' : '−') + Math.abs(s).toFixed(digits); }
+function fmtGap(ms) { return ms == null ? '--' : (ms / 1000).toFixed(1) + 's'; }
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function speedUnit() { return (isSaved() ? S.session?.speed_units : S.live?.session?.speed_units) || 'kph'; }
+function tempUnit() { return (isSaved() ? S.session?.temp_units : S.live?.session?.temp_units) || 'C'; }
+function temp(c) { return (c == null || isNaN(c)) ? '--' : (tempUnit() === 'F' ? Math.round(c * 9 / 5 + 32) : Math.round(c)); }
+function speedCol() { return speedUnit() === 'mph' ? 'speed_mph' : 'speed_kph'; }
+function distUnitLabel() { return 'm'; }
+
+// ============================================================================ traces
+class Trace {
+  constructor(lap) { this.lap = lap; this.rows = []; this.next = 0; this.complete = false; this.fetching = false; this.loaded = false; this.cache = {}; this.C = null; }
+  setColumns(cols) { if (!this.C && cols) { this.C = {}; cols.forEach((c, i) => this.C[c] = i); } }
+  has(name) { return !!(this.C && name in this.C); }
+  ingest(resp) {
+    if (resp.from !== this.next) return;
+    this.setColumns(resp.columns);
+    const di = this.C ? this.C.distance_m : 3;
+    for (const r of resp.rows) { const d = r[di]; if (d < 0) continue; const last = this.rows.length ? this.rows[this.rows.length - 1][di] : -1; if (d < last - 50) this.rows = []; this.rows.push(r); }
+    this.next = resp.next; this.complete = resp.complete; this.loaded = true;
+    if (resp.rows.length) this.cache = {};
+  }
+  col(name) { if (!this.cache[name]) { const i = this.C ? this.C[name] : undefined; this.cache[name] = i == null ? this.rows.map(() => null) : this.rows.map(r => r[i]); } return this.cache[name]; }
+  get dist() { return this.col('distance_m'); }
+  get time() { return this.col('lap_time_ms'); }
+  get length() { return this.rows.length ? this.dist[this.rows.length - 1] : 0; }
+  get lapTime() { const l = S.laps.find(x => x.lap === this.lap); return l ? l.time_ms : (this.rows.length ? this.time[this.rows.length - 1] : 0); }
+  // index of the last sample with distance <= d
+  idx(d) { const a = this.dist; let lo = 0, hi = a.length - 1; if (!a.length || d <= a[0]) return 0; if (d >= a[hi]) return hi; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (a[m] <= d) lo = m; else hi = m; } return lo; }
+  at(colIdx, d) { const a = this.dist, y = this.col(colIdx); if (!a.length) return null; const i = this.idx(d); if (i >= a.length - 1) return y[a.length - 1]; const d0 = a[i], d1 = a[i + 1]; if (d1 === d0) return y[i]; const f = clamp((d - d0) / (d1 - d0), 0, 1); return y[i] + (y[i + 1] - y[i]) * f; }
+  timeAt(d) { return this.at('lap_time_ms', d); }
+}
+async function fetchTrace(lap) {
+  let t = S.traces.get(lap);
+  if (!t) { t = new Trace(lap); S.traces.set(lap, t); }
+  if (t.fetching || (t.complete && t.loaded)) return;
+  t.fetching = true;
+  try {
+    const r = await fetch(`/api/trace?lap=${lap}&from=${t.next}${isSaved() ? '&session=' + encodeURIComponent(S.savedId) : ''}`);
+    const j = await r.json();
+    if (j.error) { t.error = j.error; t.loaded = true; S.dataDirty = true; }
+    else { t.error = null; t.ingest(j); S.dataDirty = true; }
+  } catch (e) { t.error = String(e); t.loaded = true; S.dataDirty = true; }
+  t.fetching = false;
+}
+function trace(lap) { return lap != null ? S.traces.get(lap) : null; }
+function movingAvg(a, w) { const out = new Array(a.length); let sum = 0; const q = []; for (let i = 0; i < a.length; i++) { q.push(a[i]); sum += a[i]; if (q.length > w) sum -= q.shift(); out[i] = sum / q.length; } return out; }
+
+// corners are found on the reference lap: local minima of speed with some prominence, then a braking-entry and throttle-exit boundary
+function detectCorners(t) {
+  if (!t || t.rows.length < 50 || !t.has('speed_kph')) return [];
+  const d = t.dist, v = movingAvg(t.col('speed_kph'), 5), brk = t.col('brake'), thr = t.col('throttle'), gear = t.col('gear');
+  const mins = [];
+  const W = 12;
+  for (let i = W; i < v.length - W; i++) {
+    let isMin = true;
+    for (let k = i - W; k <= i + W; k++) if (v[k] < v[i]) { isMin = false; break; }
+    if (!isMin) continue;
+    let before = v[i], after = v[i];
+    for (let k = Math.max(0, i - 60); k < i; k++) before = Math.max(before, v[k]);
+    for (let k = i; k < Math.min(v.length, i + 60); k++) after = Math.max(after, v[k]);
+    if (Math.min(before, after) - v[i] < 15) continue;
+    if (v[i] < 15) continue;   // a stop (spin, crash, pit box) is not a corner
+    if (mins.length && d[i] - d[mins[mins.length - 1]] < 110) { if (v[i] < v[mins[mins.length - 1]]) mins[mins.length - 1] = i; continue; }
+    mins.push(i);
+  }
+  return mins.map((i, n) => {
+    let j = i; while (j > 0 && d[i] - d[j] < 420 && !(brk[j] < 0.05 && thr[j] > 0.5)) j--;
+    let k = i; while (k < v.length - 1 && d[k] - d[i] < 350 && thr[k] < 0.95) k++;
+    return { n: n + 1, name: 'T' + (n + 1), apex: d[i], entry: Math.max(0, d[j] - 30), exit: Math.min(t.length, d[k] + 40), minSpeed: v[i], gear: gear[i] };
+  }).filter(c => c.exit > c.entry + 20);
+}
+function cornerStats(t, c) {
+  if (!t || !t.rows.length) return null;
+  const i0 = t.idx(c.entry), i1 = t.idx(c.exit);
+  const v = t.col('speed_kph'), brk = t.col('brake'), thr = t.col('throttle'), d = t.dist, g = t.col('gear');
+  let minV = Infinity, minI = i0, brakeAt = null, fullThrottleAt = null, peakBrake = 0;
+  for (let i = i0; i <= i1; i++) { if (v[i] < minV) { minV = v[i]; minI = i; } }
+  for (let i = i0; i <= minI; i++) { if (brk[i] > 0.1 && brakeAt == null) brakeAt = d[i]; peakBrake = Math.max(peakBrake, brk[i]); }
+  for (let i = minI; i <= i1; i++) { if (thr[i] >= 0.95) { fullThrottleAt = d[i]; break; } }
+  const tIn = t.timeAt(c.entry), tOut = t.timeAt(c.exit);
+  return { minSpeed: minV, apex: d[minI], brakeAt, fullThrottleAt, peakBrake, gear: g[minI], time: (tOut != null && tIn != null) ? tOut - tIn : null, entrySpeed: v[i0] };
+}
+
+// ============================================================================ polling
+async function poll() {
+  try {
+    const r = await fetch('/api/live'); if (r.ok) { S.live = await r.json(); S.liveDirty = true; loadCornerNames(); }
+  } catch (e) { S.live = S.live ? Object.assign(S.live, { connected: false }) : null; }
+  setTimeout(poll, 500);
+}
+function applyLaps(laps, currentLap, traceLaps) {
+  const key = JSON.stringify([S.mode, S.savedId, currentLap, laps]); if (key !== S.lapsKey) { S.lapsKey = key; S.dataDirty = true; }
+  S.laps = laps; S.currentLap = currentLap; S.traceLaps = traceLaps;
+  if (S.autoRef) { const best = bestLap(); if (best && best.lap !== S.ref) { S.ref = best.lap; S.cornerList = []; S.dataDirty = true; } }
+  if (S.ref == null) { const first = S.currentLap || (S.traceLaps.length ? S.traceLaps[0] : null); if (first != null) { S.ref = first; S.dataDirty = true; } }
+  for (const lap of new Set([S.ref, S.cmp, S.currentLap].filter(x => x != null))) fetchTrace(lap);
+}
+async function pollLaps() {
+  if (!isSaved()) {
+    try { const r = await fetch('/api/laps'); if (r.ok) { const j = await r.json(); applyLaps(j.laps, j.current_lap, j.trace_laps); } } catch (e) { }
+  }
+  setTimeout(pollLaps, 600);
+}
+async function openSaved(id) {
+  S.mode = id ? 'saved' : 'live'; S.savedId = id || '';
+  S.traces.clear(); S.ref = null; S.cmp = null; S.autoRef = true; S.cornerList = []; S.lapsKey = ''; S.cursor = null;
+  if (id) {
+    try {
+      const r = await fetch('/api/saved?id=' + encodeURIComponent(id));
+      if (r.ok) { const j = await r.json(); S.session = j.session || {}; S.cornerNamesTrack = null; loadCornerNames(); applyLaps(j.laps || [], 0, j.trace_laps || []); }
+    } catch (e) { }
+    if (S.tab === 'live') { S.tab = 'laps'; renderTabs(); }
+  } else { S.laps = []; S.session = null; }
+  S.dataDirty = true; S.liveDirty = true;
+}
+async function pollSessions() {
+  try {
+    const r = await fetch('/api/sessions');
+    if (r.ok) {
+      const j = await r.json(); S.sessions = j.sessions || [];
+      const sel = $('#sesspick'); const cur = sel.value;
+      sel.innerHTML = '<option value="">Live</option>' + S.sessions.map(x => `<option value="${x.id}">${(x.recorded || x.id).replace('T', ' ').slice(0, 16)} · ${x.track || '?'} · ${x.session_type || ''} · ${x.laps} laps${x.live ? ' · recording' : ''}</option>`).join('');
+      sel.value = cur;
+      if (sel.value !== cur) sel.value = '';
+    }
+  } catch (e) { }
+  setTimeout(pollSessions, 8000);
+}
+$('#sesspick').addEventListener('change', e => openSaved(e.target.value));
+async function pollSession() {
+  if (!isSaved()) { try { const r = await fetch('/api/session'); if (r.ok) { S.session = await r.json(); if (S.tab === 'session') S.dataDirty = true; } } catch (e) { } }
+  setTimeout(pollSession, 5000);
+}
+function trackName() { const s = isSaved() ? S.session : S.live?.session; return s ? (s.track || null) : null; }
+async function loadCornerNames() {
+  const tr = trackName();
+  if (!tr || tr === S.cornerNamesTrack) return;
+  S.cornerNamesTrack = tr;
+  const s = isSaved() ? S.session : S.live?.session;
+  const len = s ? (s.track_length_m || '') : '';
+  try {
+    const r = await fetch(`/api/corner-names?track=${encodeURIComponent(tr)}&length=${len}`);
+    if (r.ok) { const j = await r.json(); S.cornerNames = j.names || []; S.cornerPreset = j.preset || []; S.hasPreset = !!j.has_preset; S.cornerShift = +(localStorage_get('shift:' + tr) || 0); S.dataDirty = true; }
+  } catch (e) { }
+}
+// tiny persistence for the label shift (in memory + the corner names file would be overkill)
+const _shifts = {};
+function localStorage_get(k) { return _shifts[k]; }
+function localStorage_set(k, v) { _shifts[k] = v; }
+async function saveCornerNames() {
+  const tr = trackName(); if (!tr) return;
+  try { await fetch('/api/corner-names', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ track: tr, names: S.cornerNames }) }); } catch (e) { }
+}
+// Labelling: your own names win; otherwise the built-in turn list is walked in order, so each turn is
+// used at most once and the numbering can't double back on itself.
+function customName(c) {
+  let best = null, bestD = 150;
+  for (const [d, n] of S.cornerNames) { const gap = Math.abs(d - c.apex); if (gap < bestD) { bestD = gap; best = n; } }
+  return best;
+}
+function joinTurns(labels) {
+  if (labels.length === 1) return labels[0];
+  const nums = labels.map(l => (l.match(/^T(\d+)/) || [])[1]);
+  if (nums.every(Boolean)) {
+    const named = labels.map(l => l.replace(/^T\d+\s*/, '')).filter(Boolean);
+    return `T${nums[0]}-${nums[nums.length - 1]}` + (named.length ? ' ' + named[0] : '');
+  }
+  return labels.join(' / ');
+}
+function labelCorners(corners) {
+  const P = S.cornerPreset;
+  const picks = corners.map(() => []);
+  if (P.length) {
+    // Pass 1: walk forwards, giving each corner the nearest turn it hasn't already passed.
+    let next = 0;
+    corners.forEach((c, ci) => {
+      let best = -1, bestD = 260;
+      for (let i = next; i < P.length; i++) {
+        const gap = Math.abs(P[i][0] - c.apex);
+        if (gap < bestD) { bestD = gap; best = i; }
+        if (P[i][0] > c.exit + 260) break;
+      }
+      if (best >= 0) { picks[ci] = [best]; next = best + 1; }
+    });
+    // Pass 2: turns nobody claimed, but which sit inside a corner, join that corner's label.
+    const claimed = new Set(picks.flat());
+    P.forEach(([d], i) => {
+      if (claimed.has(i)) return;
+      for (let ci = 0; ci < corners.length; ci++) {
+        const c = corners[ci];
+        if (d >= c.entry && d <= c.exit && picks[ci].length) { picks[ci].push(i); claimed.add(i); break; }
+      }
+    });
+    picks.forEach(p => p.sort((a, b) => a - b));
+  }
+  corners.forEach((c, ci) => {
+    const mine = customName(c);
+    if (mine) { c.label = mine; return; }
+    const idx = picks[ci].map(i => i + S.cornerShift).filter(i => i >= 0 && i < P.length);
+    c.label = idx.length ? joinTurns(idx.map(i => P[i][1])) : (P.length ? `corner ${ci + 1}` : c.name);
+  });
+}
+function setCornerName(c, name) {
+  name = (name || '').trim();
+  let idx = -1, bestD = 150;
+  S.cornerNames.forEach(([d], i) => { const gap = Math.abs(d - c.apex); if (gap < bestD) { bestD = gap; idx = i; } });
+  if (idx >= 0) { if (name) S.cornerNames[idx] = [S.cornerNames[idx][0], name]; else S.cornerNames.splice(idx, 1); }
+  else if (name) S.cornerNames.push([Math.round(c.apex), name]);
+  S.cornerNames.sort((a, b) => a[0] - b[0]);
+  saveCornerNames(); S.dataDirty = true;
+}
+function bestLap() { let b = null; for (const l of S.laps) if (l.valid && l.time_ms > 0 && (!b || l.time_ms < b.time_ms)) b = l; return b; }
+function bestSectors() { const b = [Infinity, Infinity, Infinity]; for (const l of S.laps) { if (l.s1_ms > 0) b[0] = Math.min(b[0], l.s1_ms); if (l.s2_ms > 0) b[1] = Math.min(b[1], l.s2_ms); if (l.s3_ms > 0) b[2] = Math.min(b[2], l.s3_ms); } return b.map(x => isFinite(x) ? x : null); }
+
+// ============================================================================ canvas charts
+const charts = [];   // active chart objects on the current tab
+class Chart {
+  constructor(parent, opts) {
+    this.o = Object.assign({ height: 170, yMin: null, yMax: null, yFmt: v => v.toFixed(0), step: false, fill: false, zeroLine: false }, opts);
+    this.box = el('div', 'chart'); this.head = el('div', 'head'); this.box.appendChild(this.head);
+    this.nameEl = el('span', 'name', this.o.name); this.head.appendChild(this.nameEl);
+    this.readEl = el('span', 'read'); this.head.appendChild(this.readEl);
+    this.canvas = document.createElement('canvas'); this.box.appendChild(this.canvas); parent.appendChild(this.box);
+    this.canvas.addEventListener('mousemove', e => { const x = e.offsetX; const d = this.xToDist(x); if (d != null) { S.cursor = d; redrawCharts(); syncScrub(); } });
+    this.canvas.addEventListener('mouseleave', () => { });
+    this.series = []; this.xMin = 0; this.xMax = 1; this.pad = { l: 46, r: 12, t: 10, b: 22 };
+    charts.push(this);
+  }
+  xToDist(px) { const w = this.canvas.clientWidth - this.pad.l - this.pad.r; if (w <= 0) return null; return clamp(this.xMin + (px - this.pad.l) / w * (this.xMax - this.xMin), this.xMin, this.xMax); }
+  // series: {x:[], y:[], color, width, dash, label}
+  draw(series, xMin, xMax, bands) {
+    this.series = series; this.xMin = xMin; this.xMax = xMax;
+    const c = this.canvas, dpr = window.devicePixelRatio || 1;
+    const W = c.clientWidth || 800, H = this.o.height;
+    if (c.width !== W * dpr || c.height !== H * dpr) { c.width = W * dpr; c.height = H * dpr; c.style.height = H + 'px'; }
+    const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    let yMin = this.o.yMin, yMax = this.o.yMax;
+    if (yMin == null || yMax == null) {
+      let lo = Infinity, hi = -Infinity;
+      for (const s of series) for (let i = 0; i < s.x.length; i++) { if (s.x[i] < xMin || s.x[i] > xMax) continue; const v = s.y[i]; if (v == null || isNaN(v)) continue; if (v < lo) lo = v; if (v > hi) hi = v; }
+      if (!isFinite(lo)) { this._empty = true; lo = 0; hi = 1; } else this._empty = false;
+      if (hi - lo < 1e-6) { hi = lo + 1; }
+      const padv = (hi - lo) * 0.08; if (yMin == null) yMin = lo - padv; if (yMax == null) yMax = hi + padv;
+      if (this.o.symmetric) { const m = Math.max(Math.abs(yMin), Math.abs(yMax)); yMin = -m; yMax = m; }
+    }
+    g.font = '12px "Avenir Next Condensed", "Arial Narrow", sans-serif';
+    this.pad.l = Math.max(40, Math.ceil(Math.max(g.measureText(this.o.yFmt(yMin)).width, g.measureText(this.o.yFmt(yMax)).width)) + 12);
+    const p = this.pad, iw = W - p.l - p.r, ih = H - p.t - p.b;
+    const X = d => p.l + (d - xMin) / (xMax - xMin) * iw, Y = v => p.t + (1 - (v - yMin) / (yMax - yMin)) * ih;
+    if (this._empty) { g.fillStyle = '#5c6577'; g.font = '13px "Avenir Next", "Helvetica Neue", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('no data recorded for this lap', p.l + iw / 2, p.t + ih / 2); if (this.o.readout) this.readEl.innerHTML = ''; return; }
+    // sector band + markers
+    if (bands) {
+      g.fillStyle = 'rgba(255,255,255,0.025)'; for (let i = 0; i < bands.length; i += 2) { const a = X(bands[i]), b = X(Math.min(bands[i + 1], xMax)); if (b > a) g.fillRect(a, p.t, b - a, ih); }
+      g.font = '11px "Avenir Next Condensed", "Arial Narrow", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillStyle = '#5c6577';
+      const marks = [[xMin, 'S1'], [bands[0], 'S2'], [bands[1], 'S3']];
+      for (const [d, lbl] of marks) { if (d < xMin || d > xMax) continue; const x = X(d); if (lbl !== 'S1') { g.strokeStyle = '#3a4252'; g.setLineDash([3, 4]); g.beginPath(); g.moveTo(x, p.t); g.lineTo(x, p.t + ih); g.stroke(); g.setLineDash([]); } g.fillText(lbl, x + 4, p.t + 2); }
+    }
+    // grid
+    g.strokeStyle = '#1e2430'; g.lineWidth = 1; g.fillStyle = '#5c6577'; g.font = '12px "Avenir Next Condensed", "Arial Narrow", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle';
+    const ticks = 4;
+    for (let i = 0; i <= ticks; i++) { const v = yMin + (yMax - yMin) * i / ticks; const y = Y(v); g.beginPath(); g.moveTo(p.l, y); g.lineTo(W - p.r, y); g.stroke(); g.fillText(this.o.yFmt(v), p.l - 6, y); }
+    if (this.o.zeroLine && yMin < 0 && yMax > 0) { g.strokeStyle = '#3a4252'; g.beginPath(); g.moveTo(p.l, Y(0)); g.lineTo(W - p.r, Y(0)); g.stroke(); }
+    g.textAlign = 'center'; g.textBaseline = 'top';
+    const xt = this.o.xInt ? Math.max(1, Math.round(niceStep(xMax - xMin, 8))) : niceStep(xMax - xMin, 8);
+    for (let d = Math.ceil(xMin / xt) * xt; d <= xMax; d += xt) { const x = X(d); g.strokeStyle = '#1e2430'; g.beginPath(); g.moveTo(x, p.t); g.lineTo(x, p.t + ih); g.stroke(); g.fillText(d.toFixed(0), x, p.t + ih + 4); }
+    // series
+    g.save(); g.beginPath(); g.rect(p.l, p.t, iw, ih); g.clip();
+    for (const s of series) {
+      g.strokeStyle = s.color; g.lineWidth = s.width || 1.6; g.setLineDash(s.dash || []);
+      g.beginPath(); let started = false, prevY = null;
+      for (let i = 0; i < s.x.length; i++) {
+        const v = s.y[i]; if (v == null || isNaN(v)) { started = false; continue; }
+        const x = X(s.x[i]), y = Y(v);
+        if (!started) { g.moveTo(x, y); started = true; } else if (this.o.step) { g.lineTo(x, prevY); g.lineTo(x, y); } else g.lineTo(x, y);
+        prevY = y;
+      }
+      g.stroke();
+      if (s.fill) { g.lineTo(X(s.x[s.x.length - 1]), Y(yMin)); g.lineTo(X(s.x[0]), Y(yMin)); g.closePath(); g.fillStyle = s.fill; g.fill(); }
+    }
+    g.setLineDash([]); g.restore();
+    // cursor
+    if (S.cursor != null && S.cursor >= xMin && S.cursor <= xMax) { const x = X(S.cursor); g.strokeStyle = 'rgba(237,239,243,0.55)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, p.t); g.lineTo(x, p.t + ih); g.stroke(); }
+    // readout
+    if (this.o.readout) this.readEl.innerHTML = this.o.readout(S.cursor);
+  }
+}
+function niceStep(range, n) { const raw = range / n, pow = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / pow; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * pow; }
+function redrawCharts() { for (const c of charts) if (c.last) c.draw(...c.last); }
+function drawChart(c, series, xMin, xMax, bands) { c.last = [series, xMin, xMax, bands]; c.draw(series, xMin, xMax, bands); }
+function bandS2() { const s = isSaved() ? S.session : S.live?.session; if (!s || !s.sector2_start_m) return null; return [s.sector2_start_m, s.sector3_start_m]; }
+
+function seriesFor(t, name, color, opts = {}) { if (!t || !t.rows.length || !t.has(name)) return null; return Object.assign({ x: t.dist, y: t.col(name), color }, opts); }
+function deltaSeries(ref, cmp) {
+  if (!ref || !cmp || ref.rows.length < 2 || cmp.rows.length < 2) return null;
+  const x = [], y = [], d = ref.dist, tr = ref.time, lim = Math.min(ref.length, cmp.length);
+  for (let i = 0; i < d.length; i += 2) { if (d[i] > lim) break; const tc = cmp.timeAt(d[i]); x.push(d[i]); y.push(tc == null ? null : (tc - tr[i]) / 1000); }
+  return { x, y, color: '#edeff3', width: 1.4 };
+}
+function readTwo(name, fmt, unit) {
+  return d => {
+    if (d == null) return '';
+    const a = trace(S.ref), b = trace(S.cmp); const parts = [];
+    if (a && a.rows.length && a.has(name)) parts.push(`<span style="color:var(--ref)">L${S.ref} <b>${fmt(a.at(name, d))}</b>${unit || ''}</span>`);
+    if (b && b.rows.length && b.has(name) && S.cmp !== S.ref) parts.push(`<span style="color:var(--cmp)">L${S.cmp} <b>${fmt(b.at(name, d))}</b>${unit || ''}</span>`);
+    return parts.join(' &nbsp; ');
+  };
+}
+const f0 = v => (v == null || isNaN(v)) ? '--' : Math.round(v).toString();
+const f1 = v => (v == null || isNaN(v)) ? '--' : v.toFixed(1);
+const fpct = v => (v == null || isNaN(v)) ? '--' : Math.round(v * 100) + '%';
+
+// ============================================================================ scrubber
+function scrubber(parent, maxDist) {
+  const box = el('div'); box.id = 'scrub';
+  const lbl = el('span', 'd', 'distance');
+  const inp = document.createElement('input'); inp.type = 'range'; inp.min = 0; inp.max = Math.max(1, Math.round(maxDist)); inp.step = 1; inp.value = S.cursor != null ? Math.round(S.cursor) : 0;
+  const val = el('span', 'd num'); val.textContent = (S.cursor != null ? Math.round(S.cursor) : 0) + ' m';
+  inp.addEventListener('input', () => { S.cursor = +inp.value; val.textContent = inp.value + ' m'; redrawCharts(); });
+  const hint = el('span', 'd', 'drag, or hover a graph');
+  box.append(lbl, inp, val, hint); parent.appendChild(box);
+  S._scrub = { inp, val };
+}
+function syncScrub() { if (S._scrub && S.cursor != null) { S._scrub.inp.value = Math.round(S.cursor); S._scrub.val.textContent = Math.round(S.cursor) + ' m'; } }
+function lapChips(parent) {
+  const bar = el('div', 'toolbar');
+  const a = trace(S.ref), b = trace(S.cmp);
+  bar.appendChild(el('span', 'chip ref', S.ref != null ? `A · lap ${S.ref}${a ? ' · ' + fmtLap(a.lapTime) : ''}` : 'A · pick a lap'));
+  bar.appendChild(el('span', 'chip cmp', S.cmp != null ? `B · lap ${S.cmp}${b ? ' · ' + fmtLap(b.lapTime) : ''}` : 'B · click "vs" on a lap to compare'));
+  if (S.autoRef) bar.appendChild(el('span', '', 'A follows your best lap; click a lap in the tower to pin it'));
+  parent.appendChild(bar);
+}
+function xRange() { const a = trace(S.ref), b = trace(S.cmp); const tl = isSaved() ? S.session?.track_length_m : S.live?.session?.track_length_m; const L = Math.max(a ? a.length : 0, b ? b.length : 0, tl || 0); return [0, Math.max(100, L)]; }
+
+// ============================================================================ track map
+// The map is the racing line from the reference lap: the game sends the car's world position, so the
+// shape is drawn from real driving rather than a stored picture of the circuit.
+function lapXY(t) {
+  if (!t || !t.has('world_x') || !t.has('world_z')) return null;
+  const xs = t.col('world_x'), zs = t.col('world_z'), d = t.dist;
+  const pts = [];
+  for (let i = 0; i < xs.length; i++) {
+    const x = xs[i], z = zs[i];
+    if (x == null || z == null || x === '' || z === '' || isNaN(x) || isNaN(z)) continue;
+    pts.push({ x: +x, z: +z, d: d[i], i });
+  }
+  return pts.length > 30 ? pts : null;
+}
+function drawMap(canvas, pts, corners, hover) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 520, H = Math.round(W * 0.62);
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) { canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.height = H + 'px'; }
+  const g = canvas.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const p of pts) { if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x; if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z; }
+  const pad = 34, spanX = Math.max(1, maxX - minX), spanZ = Math.max(1, maxZ - minZ);
+  const k = Math.min((W - pad * 2) / spanX, (H - pad * 2) / spanZ);
+  const ox = (W - spanX * k) / 2 - minX * k, oy = (H - spanZ * k) / 2 - minZ * k;
+  const X = p => p.x * k + ox, Y = p => H - (p.z * k + oy);      // flip Z so the map reads like a printed one
+  canvas._proj = { X, Y };
+
+  const s = isSaved() ? S.session : S.live?.session;
+  const s2 = s?.sector2_start_m || 0, s3 = s?.sector3_start_m || 0;
+  const SECT = ['#4de08a', '#57c7f5', '#b15cff'];
+  // track: a wide dark casing with the sector-coloured line on top
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  g.strokeStyle = '#20262f'; g.lineWidth = 13;
+  g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(X(p), Y(p)) : g.moveTo(X(p), Y(p))); g.stroke();
+  let seg = -1;
+  for (let i = 1; i < pts.length; i++) {
+    const sc = pts[i].d < s2 ? 0 : (pts[i].d < s3 || !s3 ? 1 : 2);
+    if (sc !== seg) { if (seg >= 0) g.stroke(); g.beginPath(); g.moveTo(X(pts[i - 1]), Y(pts[i - 1])); g.strokeStyle = SECT[sc]; g.lineWidth = 6; seg = sc; }
+    g.lineTo(X(pts[i]), Y(pts[i]));
+  }
+  g.stroke();
+  // start/finish
+  const p0 = pts[0], p1 = pts[Math.min(6, pts.length - 1)];
+  const ang = Math.atan2(Y(p1) - Y(p0), X(p1) - X(p0));
+  g.save(); g.translate(X(p0), Y(p0)); g.rotate(ang);
+  g.fillStyle = WHITE_HEX; g.fillRect(-1.5, -11, 3, 22);
+  g.restore();
+  g.fillStyle = '#8a93a5'; g.font = '11px "Avenir Next Condensed", "Arial Narrow", sans-serif';
+  g.textAlign = 'center'; g.fillText('START', X(p0), Y(p0) - 16);
+
+  // corner markers
+  canvas._markers = [];
+  for (const c of corners) {
+    const p = pts[nearestIdx(pts, c.apex)]; if (!p) continue;
+    const cx = X(p), cy = Y(p);
+    const on = hover === c.n, sel = S.corner === c.n;
+    const r = on ? 15 : (sel ? 14 : 12);
+    g.beginPath(); g.arc(cx, cy, r, 0, 7);
+    g.fillStyle = sel ? '#57c7f5' : (on ? '#243044' : '#161c26');
+    g.fill();
+    g.lineWidth = 2; g.strokeStyle = sel ? '#57c7f5' : (on ? '#57c7f5' : '#3a4252'); g.stroke();
+    g.fillStyle = sel ? '#0b0e14' : (on ? '#edeff3' : '#c3cad6');
+    g.font = `${on || sel ? 'bold ' : ''}12px "Avenir Next Condensed", "Arial Narrow", sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(shortLabel(c.label, c.n), cx, cy + 0.5);
+    canvas._markers.push({ n: c.n, x: cx, y: cy, r: r + 5 });
+  }
+  // hovered corner name
+  if (hover != null) {
+    const c = corners.find(x => x.n === hover), m = canvas._markers.find(x => x.n === hover);
+    if (c && m) {
+      g.font = '13px "Avenir Next", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      const w = g.measureText(c.label).width + 16;
+      const bx = Math.max(4, Math.min(W - w - 4, m.x - w / 2)), by = m.y - m.r - 26;
+      g.fillStyle = 'rgba(11,14,20,0.92)'; g.strokeStyle = '#57c7f5'; g.lineWidth = 1;
+      g.beginPath(); g.roundRect(bx, by, w, 22, 4); g.fill(); g.stroke();
+      g.fillStyle = '#edeff3'; g.fillText(c.label, bx + w / 2, by + 15);
+    }
+  }
+}
+const WHITE_HEX = '#edeff3';
+function shortLabel(label, n) { const m = (label || '').match(/^T(\d+)/); return m ? m[1] : String(n); }
+function nearestIdx(pts, dist) { let lo = 0, hi = pts.length - 1; if (dist <= pts[0].d) return 0; if (dist >= pts[hi].d) return hi; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m].d <= dist) lo = m; else hi = m; } return lo; }
+
+// per-corner comparison across every lap that has trace data
+function cornerAcrossLaps(c) {
+  const rows = [];
+  for (const n of S.traceLaps) {
+    const t = trace(n); if (!t || t.rows.length < 50) continue;
+    const st = cornerStats(t, c); if (!st) continue;
+    const lap = S.laps.find(l => l.lap === n);
+    rows.push({ lap: n, lapTime: lap ? lap.time : null, valid: lap ? lap.valid : null, ...st });
+  }
+  return rows;
+}
+
+// ============================================================================ tabs
+const R = {};
+R.compare = (root) => {
+  root.appendChild(el('h2', '', 'You vs others'));
+  if (isSaved()) { root.appendChild(el('div', 'empty', 'Driver comparisons are live only. Saved sessions contain your driving traces. Choose Live in the top bar to compare the current field.')); return; }
+  const L = S.live;
+  if (L && !L.connected) root.appendChild(el('p', 'compare-note', 'No live signal — showing the last received values.'));
+  else if (L?.session?.paused) root.appendChild(el('p', 'compare-note', 'Game paused — values are not updating.'));
+  if (L?.session?.is_time_trial) {
+    root.appendChild(el('p', 'compare-note', 'Time Trial provides rival lap and sector times, but no full live opponent telemetry. Negative differences mean you are faster.'));
+    const tt = L.time_trial, you = tt?.sessionBest, rival = tt?.rival;
+    if (!you || !rival || !you.lap_ms || !rival.lap_ms) { root.appendChild(el('div', 'empty', 'Complete a lap and select a Time Trial rival in the game to compare times.')); return; }
+    comparisonTable(root, 'Your session best' + (you.valid ? '' : ' (invalid)'), 'Time Trial rival' + (rival.valid ? '' : ' (invalid)'), [
+      ['Lap', you.lap_ms, rival.lap_ms, 'time'], ['Sector 1', you.s1_ms, rival.s1_ms, 'time'],
+      ['Sector 2', you.s2_ms, rival.s2_ms, 'time'], ['Sector 3', you.s3_ms, rival.s3_ms, 'time']]);
+    return;
+  }
+  const data = L?.comparison;
+  if (!data) { root.appendChild(el('div', 'empty', 'Waiting for comparison data. If the app was just updated, save and restart Race Engineer.')); return; }
+  if (S.comparisonSession !== data.session_id) { S.comparisonSession = data.session_id; S.opponent = null; }
+  const you = data.drivers.find(d => d.you), rivals = data.drivers.filter(d => !d.you);
+  if (!you || !rivals.length) { root.appendChild(el('div', 'empty', 'Waiting for other drivers. Join a practice, qualifying, or race session with other cars.')); return; }
+  let rival = rivals.find(d => d.id === S.opponent) || rivals.find(d => d.position === you.position - 1) || rivals[0];
+  S.opponent = rival.id;
+  const bar = el('div', 'toolbar'), label = el('label', '', 'Compare with '), select = el('select');
+  select.id = 'opponent'; label.htmlFor = 'opponent';
+  for (const d of rivals) { const opt = el('option', '', `P${d.position} · ${d.name}${d.ai ? ' · AI' : ''}`); opt.value = d.id; opt.selected = d.id === rival.id; select.appendChild(opt); }
+  select.addEventListener('change', () => { S.opponent = Number(select.value); select.blur(); renderTab(); });
+  select.addEventListener('blur', () => { S.liveDirty = true; });
+  bar.append(label, select); root.appendChild(bar);
+  const sharing = rival.access === 'restricted' ? 'This driver restricts telemetry. Fuel, ERS, and tyre wear are hidden.' : rival.access === 'unknown' ? 'Waiting for this driver’s telemetry sharing status.' : 'Detailed telemetry is available where the game supplies it.';
+  root.appendChild(el('p', 'compare-note', sharing + ' — means unavailable. Time differences are you minus the selected driver; negative means you are faster. Best sectors may come from different laps.'));
+  const state = d => ({4:'Finished',5:'Disqualified',6:'Not classified',7:'Retired'}[d.result_status] || (d.in_pit ? 'In pits' : 'On track'));
+  const hidden = (d, key) => ['restricted','unknown'].includes(d.access) ? (d.access === 'restricted' ? 'Restricted' : 'Unknown') : d[key];
+  comparisonTable(root, 'YOU', rival.name, [
+    ['Session & pace'], ['Position', you.position, rival.position, 'position'], ['Status', state(you), state(rival)],
+    ['Current lap', you.lap, rival.lap], ['Last completed lap', you.last_ms, rival.last_ms, 'time'],
+    ['Best lap', you.best_ms, rival.best_ms, 'time'],
+    ...[0,1,2].map(i => [`Best sector ${i+1}`, you.sectors_ms[i], rival.sectors_ms[i], 'time']),
+    ['Live inputs · simultaneous, not matched by track position'],
+    ['Speed (' + speedUnit() + ')', you.speed, rival.speed, 'number'],
+    ['Throttle', you.throttle, rival.throttle, 'percent'], ['Brake', you.brake, rival.brake, 'percent'],
+    ['Gear', you.gear, rival.gear, 'gear'],
+    ['Tyres & strategy'], ['Tyre compound', you.compound, rival.compound], ['Tyre age (laps)', you.tyre_age, rival.tyre_age],
+    ['Pit stops', you.stops, rival.stops], ['Fuel (kg)', hidden(you,'fuel_kg'), hidden(rival,'fuel_kg'), 'decimal'],
+    ['ERS charge', hidden(you,'ers_pct'), hidden(rival,'ers_pct'), 'percent'],
+    ['Tyre wear · FL / FR / RL / RR', hidden(you,'wear'), hidden(rival,'wear'), 'wear'],
+  ]);
+};
+function comparisonTable(root, ownName, rivalName, rows) {
+  const wrap = el('div', 'compare-scroll'), table = el('table', 'compare-table'), head = el('tr');
+  for (const name of ['Metric', ownName, rivalName, 'Time difference']) head.appendChild(el('th', '', name));
+  const thead = el('thead'); thead.appendChild(head); table.appendChild(thead);
+  const body = el('tbody');
+  const fmt = (v, kind) => {
+    if (v == null || (kind === 'time' && v <= 0)) return '—';
+    if (typeof v === 'string') return v;
+    if (kind === 'time') return fmtLap(v);
+    if (kind === 'position') return 'P' + v;
+    if (kind === 'gear') return v === 0 ? 'N' : v === -1 ? 'R' : String(v);
+    if (kind === 'percent') return v.toFixed(0) + '%';
+    if (kind === 'decimal') return v.toFixed(2);
+    if (kind === 'number') return v.toFixed(0);
+    if (kind === 'wear') return v.map(n => n.toFixed(0) + '%').join(' / ');
+    return String(v);
+  };
+  for (const [name, a, b, kind] of rows) {
+    const tr = el('tr');
+    if (a === undefined && b === undefined) { tr.className = 'section'; const td = el('td', '', name); td.colSpan = 4; tr.appendChild(td); }
+    else {
+      tr.append(el('td', '', name), el('td', '', fmt(a,kind)), el('td', '', fmt(b,kind)));
+      const delta = kind === 'time' && a > 0 && b > 0 ? a-b : null;
+      const td = el('td', '', delta == null ? '—' : fmtDelta(delta) + 's');
+      if (delta != null) td.style.color = delta < 0 ? 'var(--green)' : delta > 0 ? 'var(--red)' : 'var(--text)';
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+  table.appendChild(body); wrap.appendChild(table); root.appendChild(wrap);
+}
+R.live = (root) => {
+  if (isSaved()) { const e = el('div', 'empty'); e.innerHTML = `Viewing a saved session (<b>${S.savedId}</b>). The other tabs show its data; pick <b>Live</b> in the top bar to watch the game again.`; root.appendChild(e); return; }
+  const L = S.live; if (!L || !L.driver) { root.appendChild(el('div', 'empty', 'No car on track yet. Start a session in the game and drive out of the garage.')); return; }
+  const d = L.driver, s = L.session, tyres = L.tyres, en = L.energy, car = L.car;
+  const bs = bestSectors();
+  const hero = el('div', 'hero'); root.appendChild(hero);
+  const big = el('div', 'tile big'); big.appendChild(el('div', 'lbl', `Lap ${d.lap}${s.is_race ? ' of ' + s.total_laps : ''} · sector ${d.sector}${d.current_lap_invalid ? ' · INVALID' : ''}${d.in_pit ? ' · in pits' : ''}`));
+  big.appendChild(el('div', 'val', fmtLap(d.current_lap_ms)));
+  const secs = el('div', 'sectors');
+  const mk = (lbl, ms, best) => { const c = el('div', 'sector' + (ms && best ? (ms <= best ? ' purple' : ms - best < 300 ? ' green' : ' yellow') : '')); c.appendChild(el('div', 'lbl', lbl)); c.appendChild(el('div', '', ms ? fmtLap(ms) : '--')); if (ms && best) c.appendChild(el('div', 'lbl', fmtDelta(ms - best) + ' vs best')); return c; };
+  secs.append(mk('S1', d.s1_ms, bs[0]), mk('S2', d.s2_ms, bs[1]), mk('S3', null, bs[2]));
+  big.appendChild(secs); hero.appendChild(big);
+  // live delta vs reference lap
+  const ref = trace(S.ref), cur = trace(S.currentLap);
+  let deltaTxt = '--', cls = '';
+  if (ref && ref.rows.length && cur && cur.rows.length && S.ref !== S.currentLap) { const tr = ref.timeAt(d.lap_distance_m); if (tr != null) { const dl = d.current_lap_ms - tr; deltaTxt = fmtDelta(dl, 2); cls = dl <= 0 ? 'pos' : 'neg'; } }
+  const dt = el('div', 'tile'); dt.appendChild(el('div', 'lbl', `Delta to lap ${S.ref ?? '--'} (A)`)); const dv = el('div', 'val ' + cls, deltaTxt); dt.appendChild(dv); dt.appendChild(el('div', 'sub', `last ${fmtLap(d.last_lap_ms)} · best ${fmtLap(d.best_lap_ms)}${d.ideal_ms ? ' · ideal ' + fmtLap(d.ideal_ms) : ''}`)); hero.appendChild(dt);
+  const pt = el('div', 'tile'); pt.appendChild(el('div', 'lbl', s.is_race ? 'Position' : 'Speed')); 
+  if (s.is_race) { pt.appendChild(el('div', 'val', 'P' + d.position)); pt.appendChild(el('div', 'sub', `ahead ${fmtGap(d.gap_ahead_ms)} · behind ${fmtGap(d.gap_behind_ms)} · leader ${fmtGap(d.gap_leader_ms)}`)); }
+  else { const v = el('div', 'val', Math.round(car?.speed || 0)); v.innerHTML += `<small>${speedUnit()}</small>`; pt.appendChild(v); pt.appendChild(el('div', 'sub', `gear ${car?.gear ?? '-'} · ${car?.rpm ?? 0} rpm${car?.overtake_active ? ' · OVERTAKE' : ''}${car?.aero_straight ? ' · aero straight' : ''}`)); }
+  hero.appendChild(pt);
+  const et = el('div', 'tile'); et.appendChild(el('div', 'lbl', 'ERS · fuel'));
+  const ev = el('div', 'val', Math.round(en?.ers_pct ?? 0)); ev.innerHTML += '<small>% ' + (en?.ers_mode || '') + '</small>'; et.appendChild(ev);
+  const b1 = el('div', 'bar'); const bi = el('i'); bi.style.width = clamp(en?.ers_pct || 0, 0, 100) + '%'; b1.appendChild(bi); et.appendChild(b1);
+  et.appendChild(el('div', 'sub', en ? `fuel ${en.fuel_kg.toFixed(1)} kg${s.is_race ? ' · ' + (en.fuel_laps >= 0 ? '+' : '') + en.fuel_laps.toFixed(1) + ' laps' : ''} · mix ${en.fuel_mix}` : '')); hero.appendChild(et);
+
+  const grid = el('div', 'grid'); grid.style.gridTemplateColumns = '1fr 1fr 2fr'; root.appendChild(grid);
+  const tt = el('div', 'tile'); tt.appendChild(el('div', 'lbl', `Tyres · ${tyres?.compound || '?'} (${tyres?.actual || '?'}) · ${tyres?.age_laps ?? '-'} laps`));
+  const c4 = el('div', 'car4'); const names = ['FL', 'FR', 'RL', 'RR'];
+  for (let i = 0; i < 4; i++) { const w = el('div', 'wheel'); w.appendChild(el('div', 'w', `${names[i]} · surface`)); const v = el('div', 'v', temp(tyres?.surface?.[i])); v.innerHTML += `<small>°${tempUnit()}</small>`; w.appendChild(v); w.appendChild(el('div', 'w', `carcass ${temp(tyres?.inner?.[i])}° · wear ${tyres?.wear ? Math.round(tyres.wear[i]) + '%' : '--'} · ${tyres?.pressure ? tyres.pressure[i].toFixed(1) + ' psi' : ''}`)); c4.appendChild(w); }
+  tt.appendChild(c4); grid.appendChild(tt);
+  const bt = el('div', 'tile'); bt.appendChild(el('div', 'lbl', `Brakes · bias ${car?.brake_bias ?? '--'}% · flag ${car?.flag || 'none'}`));
+  const c4b = el('div', 'car4'); for (let i = 0; i < 4; i++) { const w = el('div', 'wheel'); w.appendChild(el('div', 'w', names[i])); const v = el('div', 'v', temp(car?.brake_temps?.[i])); v.innerHTML += `<small>°${tempUnit()}</small>`; w.appendChild(v); c4b.appendChild(w); }
+  bt.appendChild(c4b);
+  const dmg = L.damage; if (dmg) { const items = []; const map = { frontLeftWingDamage: 'FW L', frontRightWingDamage: 'FW R', rearWingDamage: 'RW', floorDamage: 'floor', diffuserDamage: 'diffuser', sidepodDamage: 'sidepod', gearBoxDamage: 'gearbox', engineDamage: 'engine' }; for (const k in map) if (dmg[k]) items.push(`${map[k]} ${dmg[k]}%`); bt.appendChild(el('div', 'sub', 'damage: ' + (items.length ? items.join(', ') : 'none'))); }
+  grid.appendChild(bt);
+  const evt = el('div', 'tile'); evt.appendChild(el('div', 'lbl', 'Race control · events')); const ul = el('ul', 'events'); for (const e of (L.events || []).slice(-6).reverse()) { const li = el('li'); li.appendChild(el('span', 'num', fmtLap(e.t * 1000))); li.appendChild(document.createTextNode(e.text)); ul.appendChild(li); } if (!(L.events || []).length) ul.appendChild(el('li', '', 'nothing yet')); evt.appendChild(ul); grid.appendChild(evt);
+
+  // live trace: current lap vs reference
+  const wrap = el('div'); wrap.style.marginTop = '12px'; root.appendChild(wrap);
+  const sc = speedCol();
+  const ch = new Chart(wrap, { name: `Speed · this lap vs lap ${S.ref ?? '--'}`, height: 190, yFmt: f0 });
+  const [x0, x1] = xRange();
+  const series = [];
+  if (ref && ref.rows.length && sc != null) series.push(seriesFor(ref, sc, '#57c7f5', { width: 1.2, dash: [4, 3] }));
+  if (cur && cur.rows.length && sc != null) series.push(seriesFor(cur, sc, '#ffd447', { width: 2 }));
+  drawChart(ch, series.filter(Boolean), x0, x1, bandS2());
+  const ch2 = new Chart(wrap, { name: 'Throttle & brake · this lap', height: 110, yMin: 0, yMax: 1, yFmt: v => Math.round(v * 100) + '%' });
+  const s2 = []; if (cur && cur.rows.length) { s2.push(seriesFor(cur, 'throttle', '#37d67a', { width: 1.4 })); s2.push(seriesFor(cur, 'brake', '#ff4a4a', { width: 1.4 })); }
+  drawChart(ch2, s2, x0, x1, bandS2());
+  if (S.laps.length && !s.is_time_trial && L.field) {
+    const t = el('table'); t.innerHTML = '<tr><th>Pos</th><th>Driver</th><th>Last</th><th>Best</th><th>Gap</th><th>Interval</th><th>Tyre</th><th>Stops</th></tr>';
+    for (const r of L.field) { const tr = el('tr'); if (r.you) tr.className = 'sel'; tr.innerHTML = `<td>P${r.position}</td><td>${r.you ? '<b>YOU</b>' : r.name}<span style="color:var(--dim)"> ${r.team}</span></td><td>${fmtLap(r.last_ms)}</td><td>${fmtLap(r.best_ms)}</td><td>${r.position === 1 ? '—' : '+' + fmtGap(r.gap_leader_ms)}</td><td>${r.position === 1 ? '—' : '+' + fmtGap(r.gap_ahead_ms)}</td><td>${r.compound} ${r.tyre_age ?? ''}L${r.in_pit ? ' · PIT' : ''}</td><td>${r.stops}</td>`; t.appendChild(tr); }
+    const box = el('div', 'tile'); box.style.marginTop = '12px'; box.appendChild(el('div', 'lbl', 'Field')); box.appendChild(t); root.appendChild(box);
+  }
+};
+
+R.laps = (root) => {
+  if (!S.laps.length) { root.appendChild(el('div', 'empty', 'No completed laps yet.')); return; }
+  const bs = bestSectors(), best = bestLap();
+  root.appendChild(el('h2', '', 'All laps'));
+  const t = el('table'); t.innerHTML = '<tr><th>Lap</th><th>Time</th><th>vs best</th><th>S1</th><th>S2</th><th>S3</th><th>Valid</th><th>Tyre</th><th>Age</th><th>Wear FL/FR/RL/RR</th><th>Fuel</th><th>ERS</th><th>Pos</th></tr>';
+  for (const l of S.laps) {
+    const tr = el('tr', 'click' + (l.lap === S.ref ? ' sel' : ''));
+    const sc = (ms, b) => ms > 0 && b && ms <= b ? 'purple' : '';
+    tr.innerHTML = `<td class="muted">${l.lap}</td><td class="${best && l.lap === best.lap ? 'purple' : ''}"><b>${l.time}</b></td><td class="${best && l.time_ms > best.time_ms ? 'muted' : 'purple'}">${best ? (l.lap === best.lap ? 'best' : fmtDelta(l.time_ms - best.time_ms)) : ''}</td>` +
+      `<td class="${sc(l.s1_ms, bs[0])}">${l.s1}</td><td class="${sc(l.s2_ms, bs[1])}">${l.s2}</td><td class="${sc(l.s3_ms, bs[2])}">${l.s3}</td>` +
+      `<td class="${l.valid ? '' : 'red'}">${l.valid ? 'yes' : 'no'}</td><td>${l.compound || ''}</td><td>${l.tyre_age_laps ?? ''}</td>` +
+      `<td class="muted">${l.wear_fl != null ? `${Math.round(l.wear_fl)}/${Math.round(l.wear_fr)}/${Math.round(l.wear_rl)}/${Math.round(l.wear_rr)}%` : ''}</td>` +
+      `<td class="muted">${l.fuel_kg != null ? l.fuel_kg.toFixed(1) + ' kg' : ''}</td><td class="muted">${l.ers_pct != null ? Math.round(l.ers_pct) + '%' : ''}</td><td class="muted">${l.position ?? ''}</td>`;
+    tr.addEventListener('click', () => selectRef(l.lap)); t.appendChild(tr);
+  }
+  root.appendChild(t);
+  const ideal = bs.every(x => x) ? bs.reduce((a, b) => a + b, 0) : null;
+  const sub = el('div', 'toolbar'); sub.style.marginTop = '12px'; sub.textContent = `Best lap ${best ? best.time + ' (lap ' + best.lap + ')' : '--'} · best sectors ${bs.map(fmtLap).join(' / ')} · ideal lap ${fmtLap(ideal)}${ideal && best ? ' · ' + fmtDelta(best.time_ms - ideal) + ' left on the table' : ''}`;
+  root.appendChild(sub);
+  // wear + fuel per lap
+  const wrap = el('div', 'two'); root.appendChild(wrap);
+  const w1 = el('div'); const w2 = el('div'); wrap.append(w1, w2);
+  const x = S.laps.map(l => l.lap);
+  const ch = new Chart(w1, { name: 'Tyre wear by lap · %', height: 170, yMin: 0, yFmt: f0, step: false, xInt: true });
+  drawChart(ch, [{ x, y: S.laps.map(l => l.wear_fl), color: '#57c7f5', label: 'FL' }, { x, y: S.laps.map(l => l.wear_fr), color: '#ff9f43' }, { x, y: S.laps.map(l => l.wear_rl), color: '#b15cff' }, { x, y: S.laps.map(l => l.wear_rr), color: '#37d67a' }], Math.min(...x), Math.max(...x) + 0.01, null);
+  const ch2 = new Chart(w2, { name: 'Lap time by lap', height: 170, yFmt: v => fmtLap(v), xInt: true });
+  drawChart(ch2, [{ x, y: S.laps.map(l => l.valid ? l.time_ms : null), color: '#edeff3', width: 1.8 }], Math.min(...x), Math.max(...x) + 0.01, null);
+  root.appendChild(el('div', 'toolbar', 'Wear: FL cyan · FR orange · RL purple · RR green'));
+};
+
+function needTraces(root) {
+  const a = trace(S.ref);
+  if (!a || !a.rows.length) {
+    let msg;
+    if (S.ref == null) msg = 'Pick a lap in the tower on the left (a completed lap, or the live one).';
+    else if (a && a.error) msg = `Couldn't load lap ${S.ref}: ${a.error}. Look at the Terminal for a red error message.`;
+    else if (a && a.loaded) msg = `No trace was recorded for lap ${S.ref}.` + (S.traceLaps.length ? ` Laps with trace data in this session: ${S.traceLaps.join(', ')} — click one of those.` : ' This session has no trace data at all (trace.csv is empty or missing).');
+    else msg = `Loading lap ${S.ref}…`;
+    root.appendChild(el('div', 'empty', msg)); return false;
+  }
+  return true;
+}
+R.speed = (root) => {
+  lapChips(root); if (!needTraces(root)) return;
+  const a = trace(S.ref), b = trace(S.cmp), sc = speedCol(), [x0, x1] = xRange();
+  const c1 = new Chart(root, { name: `Speed · ${speedUnit()}`, height: 230, yFmt: f0, readout: readTwo(sc, f0, ' ' + speedUnit()) });
+  drawChart(c1, [seriesFor(a, sc, '#57c7f5', { width: 1.8 }), seriesFor(b, sc, '#ff9f43', { width: 1.4 })].filter(Boolean), x0, x1, bandS2());
+  const c2 = new Chart(root, { name: 'Delta time · B minus A (seconds, negative = B is quicker)', height: 130, yFmt: v => (v >= 0 ? '+' : '') + v.toFixed(2), symmetric: true, zeroLine: true, readout: d => { const s = deltaSeries(a, b); if (!s || d == null) return ''; const i = a.idx(d); const dt = b && b.rows.length ? b.timeAt(d) - a.time[i] : null; return dt == null ? '' : `<b>${fmtDelta(dt, 2)}</b> s at ${Math.round(d)} m`; } });
+  const ds = deltaSeries(a, b); drawChart(c2, ds ? [ds] : [], x0, x1, bandS2());
+  const c3 = new Chart(root, { name: 'Throttle · A solid, B dashed', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('throttle', fpct) });
+  drawChart(c3, [seriesFor(a, 'throttle', '#37d67a', { width: 1.5 }), seriesFor(b, 'throttle', '#37d67a', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c4 = new Chart(root, { name: 'Brake · A solid, B dashed', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
+  drawChart(c4, [seriesFor(a, 'brake', '#ff4a4a', { width: 1.5 }), seriesFor(b, 'brake', '#ff4a4a', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  scrubber(root, x1);
+};
+R.steer = (root) => {
+  lapChips(root); if (!needTraces(root)) return;
+  const a = trace(S.ref), b = trace(S.cmp), [x0, x1] = xRange();
+  const c1 = new Chart(root, { name: 'Steering · left −  right +', height: 200, yMin: -1, yMax: 1, yFmt: v => Math.round(v * 100) + '%', zeroLine: true, readout: readTwo('steer', v => Math.round(v * 100) + '%') });
+  drawChart(c1, [seriesFor(a, 'steer', '#d9b8ff', { width: 1.6 }), seriesFor(b, 'steer', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c2 = new Chart(root, { name: 'Gear', height: 130, yMin: 0, yMax: 8.5, yFmt: f0, step: true, readout: readTwo('gear', f0) });
+  drawChart(c2, [seriesFor(a, 'gear', '#57c7f5', { width: 1.6 }), seriesFor(b, 'gear', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c3 = new Chart(root, { name: 'Engine · rpm', height: 140, yFmt: f0, readout: readTwo('rpm', f0) });
+  drawChart(c3, [seriesFor(a, 'rpm', '#57c7f5', { width: 1.4 }), seriesFor(b, 'rpm', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c4 = new Chart(root, { name: `Speed · ${speedUnit()}`, height: 150, yFmt: f0, readout: readTwo(speedCol(), f0) });
+  drawChart(c4, [seriesFor(a, speedCol(), '#57c7f5', { width: 1.6 }), seriesFor(b, speedCol(), '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  scrubber(root, x1);
+};
+const WHEELCOLORS = ['#57c7f5', '#ff9f43', '#b15cff', '#37d67a'];
+function fourWheel(root, name, cols, fmt, unit, height = 170) {
+  const a = trace(S.ref), [x0, x1] = xRange();
+  if (a && !cols.some(cn => a.has(cn))) { root.appendChild(el('div', 'toolbar', `${name}: not recorded in this session (older recorder version).`)); return; }
+  const c = new Chart(root, { name: `${name} · FL cyan · FR orange · RL purple · RR green`, height, yFmt: fmt, readout: d => { if (d == null || !a) return ''; return ['FL', 'FR', 'RL', 'RR'].map((w, i) => `<span style="color:${WHEELCOLORS[i]}">${w} <b>${fmt(a.at(cols[i], d))}</b>${unit}</span>`).join(' &nbsp; '); } });
+  drawChart(c, cols.map((cn, i) => seriesFor(a, cn, WHEELCOLORS[i], { width: 1.4 })).filter(Boolean), x0, x1, bandS2());
+}
+R.tyres = (root) => {
+  lapChips(root); if (!needTraces(root)) return;
+  const tf = v => v == null ? '--' : String(temp(v));
+  fourWheel(root, `Tyre surface · °${tempUnit()}`, ['tyre_surface_fl', 'tyre_surface_fr', 'tyre_surface_rl', 'tyre_surface_rr'], tf, '°');
+  fourWheel(root, `Tyre carcass · °${tempUnit()}`, ['tyre_inner_fl', 'tyre_inner_fr', 'tyre_inner_rl', 'tyre_inner_rr'], tf, '°');
+  fourWheel(root, 'Tyre pressure · psi', ['tyre_pressure_fl', 'tyre_pressure_fr', 'tyre_pressure_rl', 'tyre_pressure_rr'], f1, ' psi');
+  const [x0, x1] = xRange(); const a = trace(S.ref);
+  const c = new Chart(root, { name: `Steering (for reference) · lap ${S.ref}`, height: 110, yMin: -1, yMax: 1, yFmt: v => Math.round(v * 100) + '%', zeroLine: true });
+  drawChart(c, [seriesFor(a, 'steer', '#d9b8ff', { width: 1.2 })].filter(Boolean), x0, x1, bandS2());
+  scrubber(root, x1);
+};
+R.brakes = (root) => {
+  lapChips(root); if (!needTraces(root)) return;
+  const tf = v => v == null ? '--' : String(temp(v));
+  fourWheel(root, `Brake temperature · °${tempUnit()}`, ['brake_temp_fl', 'brake_temp_fr', 'brake_temp_rl', 'brake_temp_rr'], tf, '°', 200);
+  const a = trace(S.ref), b = trace(S.cmp), [x0, x1] = xRange();
+  const c1 = new Chart(root, { name: 'Brake pressure · A solid, B dashed', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
+  drawChart(c1, [seriesFor(a, 'brake', '#ff4a4a', { width: 1.5 }), seriesFor(b, 'brake', '#ff4a4a', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c2 = new Chart(root, { name: 'ERS store · %', height: 150, yMin: 0, yMax: 100, yFmt: f0, readout: readTwo('ers_pct', f0, '%') });
+  drawChart(c2, [seriesFor(a, 'ers_pct', '#57c7f5', { width: 1.6 }), seriesFor(b, 'ers_pct', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c3 = new Chart(root, { name: 'ERS deploy mode · 0 none · 1 medium · 2 hotlap · 3 overtake', height: 100, yMin: -0.2, yMax: 3.2, yFmt: f0, step: true, readout: readTwo('ers_mode', f0) });
+  drawChart(c3, [seriesFor(a, 'ers_mode', '#57c7f5', { width: 1.6 }), seriesFor(b, 'ers_mode', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
+  const c4 = new Chart(root, { name: 'Overtake / aero straight mode · 1 = on', height: 90, yMin: -0.2, yMax: 1.2, yFmt: f0, step: true });
+  drawChart(c4, [seriesFor(a, 'overtake', '#ffd447', { width: 1.6 }), seriesFor(a, 'aero_or_drs', '#57c7f5', { width: 1.2, dash: [3, 3] })].filter(Boolean), x0, x1, bandS2());
+  scrubber(root, x1);
+};
+R.corner = (root) => {
+  lapChips(root); if (!needTraces(root)) return;
+  const a = trace(S.ref), b = trace(S.cmp);
+  if (!S.cornerList.length || S.cornerList._lap !== S.ref || S.cornerList._n !== a.rows.length) { S.cornerList = detectCorners(a); S.cornerList._lap = S.ref; S.cornerList._n = a.rows.length; }
+  const corners = S.cornerList;
+  if (!corners.length) { root.appendChild(el('div', 'empty', 'Not enough of the lap yet to find the corners.')); return; }
+  labelCorners(corners);
+  const su = speedUnit(), sv = v => v == null ? '--' : Math.round(su === 'mph' ? v * 0.621371 : v);
+  if (!corners.some(c => c.n === S.corner)) S.corner = corners[0].n;
+
+  // ---------- map + the selected corner's numbers
+  const wrap = el('div', 'mapwrap');
+  const head = el('div', 'head');
+  head.appendChild(el('span', 'name', `${trackName() || 'Track'} · lap ${S.ref}`));
+  head.appendChild(el('span', 'hint', 'hover a corner to see its name, click to open it'));
+  wrap.appendChild(head);
+  const row = el('div', 'maprow');
+  const left = el('div'), right = el('div', 'cornerinfo');
+  row.append(left, right); wrap.appendChild(row); root.appendChild(wrap);
+
+  const pts = lapXY(a);
+  if (!pts) {
+    left.appendChild(el('div', 'toolbar', 'No track map for this lap — the position data was added in a later version, so drive a fresh session and it will appear.'));
+  } else {
+    const canvas = document.createElement('canvas'); canvas.id = 'trackmap'; left.appendChild(canvas);
+    let hover = null;
+    const redraw = () => drawMap(canvas, pts, corners, hover);
+    requestAnimationFrame(redraw);
+    canvas.addEventListener('mousemove', e => {
+      const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+      let found = null, bestD = 1e9;
+      for (const m of canvas._markers || []) { const d2 = (m.x - mx) ** 2 + (m.y - my) ** 2; if (d2 < m.r * m.r && d2 < bestD) { bestD = d2; found = m.n; } }
+      if (found !== hover) { hover = found; canvas.style.cursor = found ? 'pointer' : 'default'; redraw(); }
+    });
+    canvas.addEventListener('mouseleave', () => { if (hover !== null) { hover = null; redraw(); } });
+    canvas.addEventListener('click', () => { if (hover != null) { S.corner = hover; const c = corners.find(x => x.n === hover); if (c) S.cursor = c.apex; renderTab(); } });
+    window.addEventListener('resize', redraw, { once: true });
+  }
+
+  // ---------- selected corner: every lap side by side
+  const c = corners.find(x => x.n === S.corner) || corners[0];
+  right.appendChild(el('h3', '', c.label));
+  right.appendChild(el('div', 'sub', `apex ${Math.round(c.apex)} m · ${Math.round(c.entry)}–${Math.round(c.exit)} m · gear ${c.gear ?? '--'}`));
+  const laps = cornerAcrossLaps(c);
+  if (!laps.length) right.appendChild(el('div', 'toolbar', 'No lap data for this corner yet.'));
+  else {
+    const bestOf = (key, low) => { const vals = laps.map(r => r[key]).filter(v => v != null); return vals.length ? (low ? Math.min(...vals) : Math.max(...vals)) : null; };
+    const bT = bestOf('time', true), bV = bestOf('minSpeed', false), bB = bestOf('brakeAt', false), bF = bestOf('fullThrottleAt', true);
+    const t = el('table');
+    t.innerHTML = `<tr><th>Lap</th><th>Through</th><th>Min speed</th><th>Brake at</th><th>Throttle at</th><th>Gear</th></tr>`;
+    for (const r of laps) {
+      const tr = el('tr', 'click' + (r.lap === S.ref ? ' sel' : ''));
+      const cell = (v, isBest, txt) => `<td class="${v == null ? 'muted' : (isBest ? 'best' : '')}">${txt}</td>`;
+      tr.innerHTML = `<td>${r.lap}${r.valid === false ? ' <span class="red">✗</span>' : ''}</td>` +
+        cell(r.time, r.time === bT, r.time != null ? (r.time / 1000).toFixed(2) + 's' : '--') +
+        cell(r.minSpeed, r.minSpeed === bV, sv(r.minSpeed) + ' ' + su) +
+        cell(r.brakeAt, r.brakeAt === bB, r.brakeAt != null ? Math.round(r.brakeAt) + ' m' : 'no brake') +
+        cell(r.fullThrottleAt, r.fullThrottleAt === bF, r.fullThrottleAt != null ? Math.round(r.fullThrottleAt) + ' m' : '--') +
+        `<td class="muted">${r.gear ?? '--'}</td>`;
+      tr.addEventListener('click', () => selectRef(r.lap));
+      t.appendChild(tr);
+    }
+    right.appendChild(t);
+    right.appendChild(el('div', 'sub', 'Purple is the best of the session. Brake at / throttle at are metres from the start line — braking later and getting to full throttle earlier is quicker, as long as the minimum speed holds up. Click a lap to make it A.'));
+  }
+
+  // ---------- traces for the selected corner
+  root.appendChild(el('h2', '', `${c.label} · trace`));
+  const x0 = c.entry, x1 = c.exit;
+  const c1 = new Chart(root, { name: `Speed · ${su}`, height: 200, yFmt: f0, readout: readTwo(speedCol(), f0, ' ' + su) });
+  drawChart(c1, [seriesFor(a, speedCol(), '#57c7f5', { width: 2 }), seriesFor(b, speedCol(), '#ff9f43', { width: 1.6 })].filter(Boolean), x0, x1, null);
+  const c2 = new Chart(root, { name: 'Brake · A solid, B dashed', height: 110, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
+  drawChart(c2, [seriesFor(a, 'brake', '#ff4a4a', { width: 1.8 }), seriesFor(b, 'brake', '#ff4a4a', { width: 1.3, dash: [4, 3] })].filter(Boolean), x0, x1, null);
+  const c3 = new Chart(root, { name: 'Throttle · A solid, B dashed', height: 110, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('throttle', fpct) });
+  drawChart(c3, [seriesFor(a, 'throttle', '#37d67a', { width: 1.8 }), seriesFor(b, 'throttle', '#37d67a', { width: 1.3, dash: [4, 3] })].filter(Boolean), x0, x1, null);
+  const c4 = new Chart(root, { name: 'Steering', height: 110, yMin: -1, yMax: 1, yFmt: v => Math.round(v * 100) + '%', zeroLine: true, readout: readTwo('steer', v => Math.round(v * 100) + '%') });
+  drawChart(c4, [seriesFor(a, 'steer', '#d9b8ff', { width: 1.8 }), seriesFor(b, 'steer', '#ff9f43', { width: 1.3, dash: [4, 3] })].filter(Boolean), x0, x1, null);
+  const c5 = new Chart(root, { name: 'Gear', height: 90, yMin: 0, yMax: 8.5, yFmt: f0, step: true, readout: readTwo('gear', f0) });
+  drawChart(c5, [seriesFor(a, 'gear', '#57c7f5', { width: 1.6 }), seriesFor(b, 'gear', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, null);
+
+  // ---------- all corners, A vs B
+  root.appendChild(el('h2', '', 'All corners'));
+  const t2 = el('table'); t2.innerHTML = `<tr><th>Corner</th><th>Apex</th><th>Min speed A</th><th>Min speed B</th><th>Brake A</th><th>Brake B</th><th>Throttle A</th><th>Throttle B</th><th>Time A</th><th>Time B</th><th>Δ B−A</th></tr>`;
+  let totalLoss = 0;
+  for (const cc of corners) {
+    const sa = cornerStats(a, cc), sb = b && b.rows.length && S.cmp !== S.ref ? cornerStats(b, cc) : null;
+    const dt = sa && sb && sa.time != null && sb.time != null ? sb.time - sa.time : null; if (dt != null) totalLoss += dt;
+    const tr = el('tr', 'click' + (S.corner === cc.n ? ' sel' : ''));
+    const nameTd = el('td');
+    if (S.editingCorner === cc.n) {
+      const inp = document.createElement('input'); inp.className = 'cname'; inp.value = cc.label; inp.size = 14;
+      inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { S.editingCorner = null; setCornerName(cc, inp.value); renderTab(); } if (e.key === 'Escape') { S.editingCorner = null; renderTab(); } });
+      inp.addEventListener('click', e => e.stopPropagation());
+      nameTd.appendChild(inp); setTimeout(() => { inp.focus(); inp.select(); }, 0);
+    } else {
+      nameTd.appendChild(el('b', '', cc.label));
+      const pen = el('button', 'rename', '✎'); pen.title = 'rename (saved for ' + (trackName() || 'this track') + ')';
+      pen.addEventListener('click', e => { e.stopPropagation(); S.editingCorner = cc.n; renderTab(); });
+      nameTd.appendChild(pen);
+    }
+    tr.appendChild(nameTd);
+    const tmp = el('tr');
+    tmp.innerHTML = `<td class="muted">${Math.round(cc.apex)}</td><td>${sv(sa?.minSpeed)}</td><td class="muted">${sb ? sv(sb.minSpeed) : '--'}</td>` +
+      `<td>${sa?.brakeAt != null ? Math.round(sa.brakeAt) : '--'}</td><td class="muted">${sb?.brakeAt != null ? Math.round(sb.brakeAt) : '--'}</td>` +
+      `<td>${sa?.fullThrottleAt != null ? Math.round(sa.fullThrottleAt) : '--'}</td><td class="muted">${sb?.fullThrottleAt != null ? Math.round(sb.fullThrottleAt) : '--'}</td>` +
+      `<td>${sa?.time != null ? (sa.time / 1000).toFixed(2) : '--'}</td><td class="muted">${sb?.time != null ? (sb.time / 1000).toFixed(2) : '--'}</td>` +
+      `<td class="${dt == null ? '' : dt > 0 ? 'red' : 'green'}">${dt == null ? '--' : fmtDelta(dt, 2)}</td>`;
+    while (tmp.firstChild) tr.appendChild(tmp.firstChild);
+    tr.addEventListener('click', () => { S.corner = cc.n; S.cursor = cc.apex; renderTab(); });
+    t2.appendChild(tr);
+  }
+  root.appendChild(t2);
+  const bar = el('div', 'toolbar');
+  if (S.hasPreset) {
+    bar.appendChild(el('span', '', `Turn numbers for ${trackName()} are built in${S.cornerShift ? ` (shifted ${S.cornerShift > 0 ? '+' : ''}${S.cornerShift})` : ''}. If they're all a turn out:`));
+    const mk = (txt, delta) => { const btn = el('button', 'chip', txt); btn.addEventListener('click', () => { S.cornerShift += delta; localStorage_set('shift:' + trackName(), S.cornerShift); renderTab(); }); return btn; };
+    bar.appendChild(mk('← back a turn', -1)); bar.appendChild(mk('forward a turn →', 1));
+    if (S.cornerShift) { const r = el('button', 'chip', 'reset'); r.addEventListener('click', () => { S.cornerShift = 0; localStorage_set('shift:' + trackName(), 0); renderTab(); }); bar.appendChild(r); }
+  } else bar.appendChild(el('span', '', `No built-in turn list for ${trackName() || 'this track'} — click ✎ to name them once and they stick.`));
+  if (b && S.cmp !== S.ref) bar.appendChild(el('span', '', `Total over corners: ${fmtDelta(totalLoss, 2)} s.`));
+  root.appendChild(bar);
+  scrubber(root, xRange()[1]);
+};
+R.session = (root) => {
+  const s = S.session, L = liveSess();
+  if (!s && !L) { root.appendChild(el('div', 'empty', 'No session info yet.')); return; }
+  const two = el('div', 'two'); root.appendChild(two);
+  const left = el('div'), right = el('div'); two.append(left, right);
+  left.appendChild(el('h2', '', 'Session'));
+  const kv = el('div', 'kv');
+  const rows = [['Track', L?.track || s?.track], ['Session', L?.type || s?.session_type], ['Game', 'v' + (S.live?.game_version || s?.game_version || '')],
+    ['Weather', L ? `${L.weather}, track ${temp(L.track_temp_c)}° air ${temp(L.air_temp_c)}°` : s?.weather], ['AI difficulty', L?.ai_difficulty ?? s?.ai_difficulty],
+    ['Regulations', (L?.regs_2026 ?? s?.regulations_2026) ? '2026 cars (active aero, Overtake mode)' : 'pre-2026 (DRS)'], ['Track length', (L?.track_length_m || s?.track_length_m) + ' m'],
+    ['Sector 2 starts', Math.round(L?.sector2_start_m || s?.sector2_start_m || 0) + ' m'], ['Sector 3 starts', Math.round(L?.sector3_start_m || s?.sector3_start_m || 0) + ' m']];
+  if (L?.is_race) rows.push(['Pit window', L.pit_ideal_lap ? `ideal lap ${L.pit_ideal_lap}, latest ${L.pit_latest_lap}, rejoin P${L.pit_rejoin_position}` : 'n/a']);
+  for (const [k, v] of rows) { kv.appendChild(el('div', '', k)); kv.appendChild(el('div', 'num', v == null ? '--' : String(v))); }
+  left.appendChild(kv);
+  if (L?.forecast?.length) { left.appendChild(el('h2', '', 'Forecast')); const ul = el('ul', 'events'); for (const f of L.forecast) ul.appendChild(el('li', '', `+${f.offset_min} min · ${f.weather} · rain ${f.rain_pct}%`)); left.appendChild(ul); }
+  if (s?.assists) {
+    const A = s.assists, onoff = v => v ? 'on' : 'off';
+    const decoded = [['Traction control', ['off', 'medium', 'full'][A.traction_control] ?? A.traction_control], ['ABS', onoff(A.abs)],
+      ['Gearbox', ['manual', 'manual', 'manual + suggested gear', 'automatic'][A.gearbox] ?? A.gearbox], ['Racing line', ['off', 'corners only', 'full'][A.racing_line] ?? A.racing_line],
+      ['Braking assist', ['off', 'low', 'medium', 'high'][A.braking] ?? A.braking], ['Steering assist', onoff(A.steering)], ['Pit assist', onoff(A.pit)], ['ERS assist', onoff(A.ers)]];
+    left.appendChild(el('h2', '', 'Assists')); const kv2 = el('div', 'kv'); for (const [k, v] of decoded) { kv2.appendChild(el('div', '', k)); kv2.appendChild(el('div', 'num', String(v))); } left.appendChild(kv2);
+  }
+  if (isSaved() && s?.time_trial) { left.appendChild(el('h2', '', 'Time trial')); const kv3 = el('div', 'kv'); for (const k in s.time_trial) { const v = s.time_trial[k]; kv3.appendChild(el('div', '', k.replace(/([A-Z])/g, ' $1').toLowerCase())); kv3.appendChild(el('div', 'num', v.valid && v.lap !== '--' ? `${v.lap}  (${v.s1} / ${v.s2} / ${v.s3})` : '--')); } left.appendChild(kv3); }
+  if (!isSaved() && S.live?.time_trial) { left.appendChild(el('h2', '', 'Time trial')); const tt = S.live.time_trial; const kv3 = el('div', 'kv'); for (const k of ['sessionBest', 'personalBest', 'rival']) { const v = tt[k]; kv3.appendChild(el('div', '', k.replace(/([A-Z])/g, ' $1').toLowerCase())); kv3.appendChild(el('div', 'num', v.valid && v.lap_ms ? `${fmtLap(v.lap_ms)}  (${fmtLap(v.s1_ms)} / ${fmtLap(v.s2_ms)} / ${fmtLap(v.s3_ms)})` : '--')); } left.appendChild(kv3); }
+  right.appendChild(el('h2', '', 'Setup'));
+  const su = s?.setup;
+  if (su) {
+    const kv4 = el('div', 'kv');
+    const items = [['Front wing', su.frontWing], ['Rear wing', su.rearWing], ['Diff on throttle', su.onThrottle + '%'], ['Diff off throttle', su.offThrottle + '%'],
+      ['Camber front / rear', `${su.frontCamber.toFixed(2)} / ${su.rearCamber.toFixed(2)}`], ['Toe front / rear', `${su.frontToe.toFixed(2)} / ${su.rearToe.toFixed(2)}`],
+      ['Suspension front / rear', `${su.frontSuspension} / ${su.rearSuspension}`], ['Anti-roll bar front / rear', `${su.frontAntiRollBar} / ${su.rearAntiRollBar}`],
+      ['Ride height front / rear', `${su.frontSuspensionHeight} / ${su.rearSuspensionHeight}`], ['Brake pressure', su.brakePressure + '%'], ['Brake bias', su.brakeBias + '%'],
+      ['Engine braking', su.engineBraking + '%'], ['Tyre pressure front', `${su.frontLeftTyrePressure.toFixed(1)} / ${su.frontRightTyrePressure.toFixed(1)} psi`],
+      ['Tyre pressure rear', `${su.rearLeftTyrePressure.toFixed(1)} / ${su.rearRightTyrePressure.toFixed(1)} psi`], ['Ballast', su.ballast], ['Fuel load', su.fuelLoad.toFixed(1)]];
+    for (const [k, v] of items) { kv4.appendChild(el('div', '', k)); kv4.appendChild(el('div', 'num', String(v))); }
+    right.appendChild(kv4);
+  } else right.appendChild(el('div', 'toolbar', 'Setup arrives once you are on track.'));
+  if (s?.tyre_sets?.length) {
+    right.appendChild(el('h2', '', 'Tyre sets'));
+    const groups = new Map();
+    for (const t of s.tyre_sets) { if (t.fitted) continue; const g = groups.get(t.compound) || { n: 0, fresh: 0, delta: t.delta_s_per_lap }; g.n++; if (t.wear === 0) g.fresh++; groups.set(t.compound, g); }
+    const ul = el('ul', 'events');
+    const fitted = s.tyre_sets.find(t => t.fitted); if (fitted) ul.appendChild(el('li', '', `Fitted: ${fitted.compound}, ${fitted.wear}% worn`));
+    for (const [comp, g] of groups) ul.appendChild(el('li', '', `${comp}: ${g.n} set${g.n > 1 ? 's' : ''} available (${g.fresh} new)${g.delta ? ' · ' + (g.delta > 0 ? '+' : '') + g.delta.toFixed(2) + ' s/lap vs fitted' : ''}`));
+    right.appendChild(ul);
+  }
+  right.appendChild(el('h2', '', 'Events'));
+  const ul = el('ul', 'events'); const evs = isSaved() ? (s?.events || []).slice().reverse() : (S.live?.events || []).slice().reverse();
+  for (const e of evs) { const li = el('li'); if (typeof e === 'string') li.textContent = e; else { li.appendChild(el('span', 'num', fmtLap(e.t * 1000))); li.appendChild(document.createTextNode(e.text)); } ul.appendChild(li); } if (!evs.length) ul.appendChild(el('li', '', 'nothing yet'));
+  right.appendChild(ul);
+  if (s?.final_classification) { right.appendChild(el('h2', '', 'Final classification')); const t = el('table'); t.innerHTML = '<tr><th>Pos</th><th>Driver</th><th>Best lap</th><th>Stops</th><th>Penalties</th></tr>'; for (const r of s.final_classification) { const tr = el('tr'); tr.innerHTML = `<td>P${r.position}</td><td>${r.driver}</td><td>${r.best_lap}</td><td>${r.stops}</td><td>${r.penalties_s ? r.penalties_s + 's' : ''}</td>`; t.appendChild(tr); } right.appendChild(t); }
+};
+
+// ============================================================================ tower + top bar
+function selectRef(lap) { S.ref = lap; S.autoRef = false; S.cornerList = []; fetchTrace(lap); S.dataDirty = true; renderTower(); renderTab(); }
+function selectCmp(lap) { S.cmp = (S.cmp === lap) ? null : lap; if (S.cmp != null) fetchTrace(lap); S.dataDirty = true; renderTower(); renderTab(); }
+function renderTower() {
+  const rows = $('#towerrows'); rows.innerHTML = '';
+  const bs = bestSectors(), best = bestLap();
+  const mk = (lap, timeMs, s1, s2, s3, valid, live) => {
+    const r = el('div', 'laprow' + (valid ? '' : ' invalid') + (live ? ' live' : '') + (lap === S.ref ? ' ref' : '') + (lap === S.cmp ? ' cmp' : ''));
+    r.appendChild(el('span', 'n', live ? '●' : String(lap)));
+    r.appendChild(el('span', 't' + (best && lap === best.lap ? ' purple' : ''), live ? fmtLap(timeMs) : fmtLap(timeMs)));
+    const sc = (ms, b) => 's' + (ms > 0 && b && ms <= b ? ' purple' : '');
+    r.appendChild(el('span', sc(s1, bs[0]), s1 > 0 ? fmtLap(s1) : (live ? '…' : '--')));
+    r.appendChild(el('span', sc(s2, bs[1]), s2 > 0 ? fmtLap(s2) : (live && s1 > 0 ? '…' : '--')));
+    r.appendChild(el('span', sc(s3, bs[2]), s3 > 0 ? fmtLap(s3) : (live && s2 > 0 ? '…' : '--')));
+    const vs = el('button', 'vs', 'vs'); vs.title = 'compare this lap (B)'; vs.addEventListener('click', e => { e.stopPropagation(); selectCmp(lap); }); r.appendChild(vs);
+    r.addEventListener('click', () => selectRef(lap));
+    rows.appendChild(r);
+  };
+  const d = isSaved() ? null : S.live?.driver;
+  if (d && S.currentLap) mk(S.currentLap, d.current_lap_ms, d.s1_ms, d.s2_ms, 0, !d.current_lap_invalid, true);
+  for (const l of S.laps.slice().reverse()) mk(l.lap, l.time_ms, l.s1_ms, l.s2_ms, l.s3_ms, l.valid, false);
+  // laps that have trace data but no timed entry (recording started mid-lap, session ended mid-lap, formation lap)
+  const known = new Set(S.laps.map(l => l.lap)); if (d && S.currentLap) known.add(S.currentLap);
+  const extra = S.traceLaps.filter(n => !known.has(n)).sort((a, b) => b - a);
+  if (extra.length) { rows.appendChild(el('div', 'sep', 'trace only · no lap time recorded')); for (const n of extra) mk(n, 0, 0, 0, 0, true, false); }
+  if (!S.laps.length && !d && !extra.length) rows.appendChild(el('div', 'empty', isSaved() ? 'This session has no completed laps.' : 'Laps appear here as you complete them.'));
+}
+function renderTop() {
+  const L = S.live, conn = $('#conn'), txt = $('#conntext');
+  if (!L) { conn.className = ''; txt.textContent = 'engineer.py not reachable'; return; }
+  if (L.packet_format && L.packet_format !== 2026) { conn.className = 'stale'; txt.textContent = `game sending format ${L.packet_format} — set UDP format 2026`; }
+  else if (L.connected) { conn.className = 'on'; txt.textContent = `live · ${L.packets_per_second} pkt/s`; }
+  else { conn.className = 'stale'; txt.textContent = 'no data from the game'; }
+  const line = $('#sessline');
+  if (isSaved()) { const v = S.session || {}; line.innerHTML = `<span style="color:var(--yellow)">saved session</span><span><b>${v.track || '?'}</b></span><span>${v.session_type || ''}</span><span>${v.weather || ''}${v.track_temp_c != null ? ' · track ' + temp(v.track_temp_c) + '°' + tempUnit() : ''}</span><span>${v.recorded ? v.recorded.replace('T', ' ') : ''}</span>`; $('#brandsub').textContent = `${L.driver_name} · ${S.savedId}`; return; }
+  const s = L.session;
+  line.innerHTML = s ? `<span><b>${s.track}</b></span><span>${s.type}${s.is_race ? ' · ' + s.total_laps + ' laps' : ''}</span><span>${s.weather} · track ${temp(s.track_temp_c)}°${s.temp_units} · air ${temp(s.air_temp_c)}°${s.temp_units}</span>${s.safety_car !== 'none' ? '<span style="color:var(--yellow)"><b>' + s.safety_car + '</b></span>' : ''}${s.paused ? '<span style="color:var(--yellow)">paused</span>' : ''}` : '<span>waiting for a session</span>';
+  $('#brandsub').textContent = s ? `${L.driver_name} · game v${L.game_version}` : 'waiting for the game';
+}
+function renderTabs() { const n = $('#tabs'); n.innerHTML = ''; for (const [id, label] of TABS) { const b = el('button', id === S.tab ? 'active' : '', label); b.addEventListener('click', () => { S.tab = id; charts.length = 0; renderTab(true); renderTabs(); }); n.appendChild(b); } }
+function renderTab(force) {
+  const root = $('#content');
+  const scrollY = root.scrollTop;
+  charts.length = 0; root.innerHTML = '';
+  try { R[S.tab](root); } catch (e) { root.appendChild(el('div', 'empty', 'Could not draw this tab: ' + e.message)); console.error(e); }
+  root.scrollTop = scrollY;
+}
+// throttle: full re-render at most ~3 times a second, only when something changed
+function tick() {
+  const now = performance.now();
+  if (now - S.lastRender > 330 && S.editingCorner == null) {
+    if (S.liveDirty) { S.liveDirty = false; S.lastRender = now; renderTop(); renderTower(); if (S.tab === 'live' || (S.tab === 'compare' && !$('#opponent:focus'))) renderTab(); }
+    if (S.dataDirty) { S.dataDirty = false; S.lastRender = now; renderTower(); renderTab(); }
+  }
+  // keep the current lap trace flowing (at most ~2 requests a second)
+  if (!isSaved() && S.currentLap && now - S.lastTraceFetch > 450) { S.lastTraceFetch = now; fetchTrace(S.currentLap); }
+  requestAnimationFrame(tick);
+}
+window.addEventListener('resize', () => { S.dataDirty = true; });
+renderTabs(); poll(); pollLaps(); pollSession(); pollSessions(); tick();
+</script>
+</body>
+</html>
