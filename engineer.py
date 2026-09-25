@@ -52,6 +52,8 @@ except ImportError:                   # pragma: no cover - Windows
     termios = tty = None              # type: ignore[assignment]
     import msvcrt as _MSVCRT          # type: ignore[no-redef]
 
+from opponent_traces import OpponentTraces
+
 from f1_udp import (RaceState, TelemetryListener, DEFAULT_PORT, INFRINGEMENTS, PENALTY_TYPES,
                     TRACKS, SESSION_TYPES, WEATHER, SAFETY_CAR, FLAGS, VISUAL_COMPOUND, ACTUAL_COMPOUND,
                     FUEL_MIX, ERS_MODE, DRIVER_STATUS, TEAMS, PKT_LAP, PKT_TELEMETRY,
@@ -570,6 +572,7 @@ class SessionLogger:
 
     def __init__(self, state: RaceState, root: Path = SESSIONS_DIR):
         self.state = state
+        self.opponents = OpponentTraces(state)
         self.root = root
         self.folder: Path | None = None
         self.session_uid: int | None = None
@@ -593,6 +596,7 @@ class SessionLogger:
 
     # called under state.lock
     def on_packet(self, pid: int) -> None:
+        self.opponents.ingest(pid)
         st = self.state
         if st.session_uid != self.session_uid:
             self._reset_buffers()
@@ -700,9 +704,9 @@ class SessionLogger:
             return None
         new_rows = self.trace[self.trace_flushed:]
         self.trace_flushed = len(self.trace)
-        return folder, new_rows, self._laps_table_locked(), self._session_info_locked()
+        return folder, new_rows, self._laps_table_locked(), self._session_info_locked(), self.opponents.snapshot(include_rows=True)
 
-    def _write(self, folder: Path, new_rows: list, laps: list[dict], info: dict) -> None:
+    def _write(self, folder: Path, new_rows: list, laps: list[dict], info: dict, opponents: dict) -> None:
         with self.io_lock:
             trace_path = folder / "trace.csv"
             write_header = not trace_path.exists()
@@ -718,6 +722,10 @@ class SessionLogger:
                     w.writerows(laps)
             with open(folder / "session.json", "w") as fh:
                 json.dump(info, fh, indent=1)
+            path = folder / "opponents.json"
+            temporary = folder / "opponents.json.tmp"
+            temporary.write_text(json.dumps(opponents, separators=(",", ":")))
+            temporary.replace(path)
         self.last_flush = time.time()
 
     def _laps_table_locked(self) -> list[dict]:
@@ -849,6 +857,11 @@ class DashboardServer:
                         self.wfile.write(body)
                     elif url.path == "/api/live":
                         self._json(app.live_json())
+                    elif url.path == "/api/opponents":
+                        self._json(app.opponents_json(q.get("session", [""])[0]))
+                    elif url.path == "/api/opponent-trace":
+                        self._json(app.opponents_json(q.get("session", [""])[0],
+                            int(q.get("driver", ["-1"])[0]), int(q.get("lap", ["0"])[0])))
                     elif url.path == "/api/laps":
                         self._json(app.laps_json())
                     elif url.path == "/api/session":
@@ -1013,6 +1026,28 @@ class DashboardServer:
                                      for k, v in st.time_trial.items()}
             out["events"] = [{"t": e["sessionTime"], "text": st.describe_event(e)} for e in list(st.events)[-12:]]
             return out
+
+    def opponents_json(self, sid="", driver_id=None, lap=None) -> dict:
+        if not sid:
+            with self.state.lock:
+                if driver_id is None:
+                    return self.logger.opponents.snapshot()
+                return self.logger.opponents.trace(driver_id, lap)
+        directory = self._saved_dir(sid)
+        if directory is None:
+            return {"error": "No such saved session."}
+        path = directory / "opponents.json"
+        if not path.exists():
+            return {"error": "This older recording has no opponent lap traces. Record a new practice, qualifying, or race session."}
+        data = json.loads(path.read_text())
+        if driver_id is not None:
+            driver = next((d for d in data['drivers'] if d['id'] == driver_id), {})
+            record = next((r for r in driver.get('laps', []) if r['lap'] == lap), None)
+            return {"session_id": data['session_id'], "columns": data['columns'], "trace": record}
+        for driver in data['drivers']:
+            for record in driver['laps']:
+                record.pop('rows', None)
+        return data
 
     def comparison_json(self) -> dict:
         """Called under the live snapshot lock; hidden values must never look like zero."""

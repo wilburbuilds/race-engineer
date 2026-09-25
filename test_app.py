@@ -36,8 +36,22 @@ with tempfile.TemporaryDirectory() as temp:
         duplicate=subprocess.run(cmd,input='',capture_output=True,text=True,timeout=10)
         assert duplicate.returncode != 0 and 'already recording' in duplicate.stderr
         sender=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        participants=bytearray(f.EXPECTED_SIZES[f.PKT_PARTICIPANTS])
+        header=packet(f.PKT_SESSION,f.SESSION_A,{})[:f.HEADER.size]
+        participants[:f.HEADER.size]=header
+        offset=0
+        for name, code in f.HEADER.fields:
+            if name=='packetId': struct.pack_into('<'+code,participants,offset,f.PKT_PARTICIPANTS)
+            offset+=struct.calcsize('<'+code)
+        participants[f.HEADER.size]=2
+        for driver in range(2):
+            offset=f.HEADER.size+1+driver*f.PARTICIPANT.size
+            for name,code in f.PARTICIPANT.fields:
+                if name=='name': struct.pack_into('<'+code,participants,offset,('Test '+str(driver)).encode())
+                offset+=struct.calcsize('<'+code)
         for payload in (
             packet(f.PKT_SESSION,f.SESSION_A,{'trackId':10,'sessionType':10,'trackLength':7007}),
+            participants,
             packet(f.PKT_LAP,f.LAP_DATA,{'carPosition':1,'currentLapNum':1,'driverStatus':1,'resultStatus':2,'lapDistance':100}),
             packet(f.PKT_TELEMETRY,f.CAR_TELEMETRY,{'speed':123,'gear':3,'throttle':.5}),
         ): sender.sendto(payload,('127.0.0.1',udp_port))
@@ -47,11 +61,17 @@ with tempfile.TemporaryDirectory() as temp:
             if live.get('trace_rows',0)>0: break
             time.sleep(.1)
         assert live['trace_rows']==1,live
+        catalog=json.load(urllib.request.urlopen(url+'/api/opponents',timeout=5))
+        assert len(catalog['drivers'])==1 and catalog['drivers'][0]['laps'][0]['samples']==1,catalog
+        trace=json.load(urllib.request.urlopen(url+'/api/opponent-trace?driver=0&lap=1',timeout=5))
+        assert trace['trace']['rows'][0][2]==123
         proc.stdin.close()
         proc.wait(timeout=10)
         assert proc.returncode == 0, proc.stderr.read()
         recordings=list(Path(temp).glob('sessions/*/trace.csv'))
         assert len(recordings)==1 and len(recordings[0].read_text().splitlines())==2
+        saved=json.loads((recordings[0].parent/'opponents.json').read_text())
+        assert saved['drivers'][0]['laps'][0]['rows'][0][2]==123
         print('PASS: bundled Python, dashboard, comparison API, duplicate prevention, UDP capture, recording saved on EOF, shutdown')
     finally:
         if proc.poll() is None: proc.terminate(); proc.wait(timeout=10)

@@ -625,9 +625,127 @@ function cornerAcrossLaps(c) {
 
 // ============================================================================ tabs
 const R = {};
+// Field lap overlays use their own traces, independent of the personal lap tower.
+const O = {context: '', catalog: null, error: '', driver: null, ownLap: null, rivalLap: null,
+  own: null, rival: null, loadedKey: '', pending: false, range: 'all'};
+function overlayContext() { return isSaved() ? 'saved:' + S.savedId : 'live:' + (S.live?.comparison?.session_id || ''); }
+function overlayReset(context) {
+  Object.assign(O, {context, catalog:null, error:'', driver:null, ownLap:null, rivalLap:null,
+    own:null, rival:null, loadedKey:'', range:'all'});
+}
+function overlayPick(laps) {
+  return [...laps].reverse().find(x => x.finished && x.full && !x.invalid && !x.pit) || [...laps].reverse().find(x => x.finished) || laps.at(-1);
+}
+async function pollOverlays() {
+  setTimeout(pollOverlays, 1500);
+  if (S.tab === 'compare' && !O.pending) {
+    const context = overlayContext();
+    if (O.context !== context) overlayReset(context);
+    O.pending = true;
+    const suffix = isSaved() ? 'session=' + encodeURIComponent(S.savedId) : '';
+    try {
+      const response = await fetch('/api/opponents?' + suffix);
+      if (!response.ok) throw new Error('Could not load recorded opponents.');
+      const catalog = await response.json();
+      if (overlayContext() !== context) return;
+      O.catalog = catalog; O.error = catalog.error || '';
+      const own = catalog.drivers?.find(d => d.you);
+      const rivals = catalog.drivers?.filter(d => !d.you) || [];
+      const rival = rivals.find(d => d.id === O.driver) || rivals[0];
+      if (own && rival) {
+        if (O.driver !== rival.id) { O.driver = rival.id; O.rivalLap = null; }
+        if (!own.laps.some(l => l.lap === O.ownLap)) O.ownLap = overlayPick(own.laps)?.lap;
+        if (!rival.laps.some(l => l.lap === O.rivalLap)) O.rivalLap = overlayPick(rival.laps)?.lap;
+        const selection = JSON.stringify([context, O.driver, O.ownLap, O.rivalLap]);
+        const key = JSON.stringify([selection, own.name, rival.name, own.laps.find(l=>l.lap===O.ownLap), rival.laps.find(l=>l.lap===O.rivalLap)]);
+        const completed = own.laps.find(l => l.lap === O.ownLap)?.finished && rival.laps.find(l => l.lap === O.rivalLap)?.finished;
+        if (O.loadedKey !== key || !completed) {
+          const [a,b] = await Promise.all([own, rival].map((d,i) => fetch(`/api/opponent-trace?${suffix}&driver=${d.id}&lap=${i ? O.rivalLap : O.ownLap}`).then(r => { if (!r.ok) throw new Error('Could not load lap traces.'); return r.json(); })));
+          if (overlayContext() !== context || selection !== JSON.stringify([context,O.driver,O.ownLap,O.rivalLap])) return;
+          if (a.session_id !== catalog.session_id || b.session_id !== catalog.session_id) { overlayReset(context); return; }
+          O.own = a.trace; O.rival = b.trace; O.loadedKey = key;
+        }
+      } else { O.own = O.rival = null; O.loadedKey = ''; }
+      S.dataDirty = true;
+    } catch (e) { if (overlayContext() === context) { O.error = e.message; O.own = O.rival = null; S.dataDirty = true; } }
+    finally { O.pending = false; }
+  }
+}
+function overlaySelectionChanged() { O.own = O.rival = null; O.loadedKey = ''; S.dataDirty = true; renderTab(); }
+function overlayLabel(lap) {
+  const status = !lap.finished ? 'recording' : lap.full ? 'complete' : 'partial';
+  return `Lap ${lap.lap} · ${fmtLap(lap.time_ms)} · ${status}${lap.invalid ? ' · invalid' : ''}${lap.pit ? ' · pit lap' : ''}${lap.gaps ? ' · gaps' : ''}`;
+}
+function overlayValue(rows, distance, col) {
+  if (!rows?.length || distance < rows[0][0] || distance > rows.at(-1)[0]) return null;
+  let lo=0, hi=rows.length-1;
+  while (hi-lo>1) { const mid=(lo+hi)>>1; if (rows[mid][0] <= distance) lo=mid; else hi=mid; }
+  const a=rows[lo], b=rows[hi];
+  if (distance === a[0]) return a[col];
+  if (distance === b[0]) return b[col];
+  if (b[6]-a[6]>.5 || b[0]-a[0]>100) return null;
+  return a[col]+(b[col]-a[col])*(distance-a[0])/(b[0]-a[0] || 1);
+}
+function overlaySeries(rows, col, multiplier, color, label) {
+  const x=[],y=[];
+  rows.forEach((r,i) => {
+    if (i && (r[6]-rows[i-1][6]>.5 || r[0]-rows[i-1][0]>100)) { x.push(r[0]); y.push(null); }
+    x.push(r[0]); y.push(r[col]*multiplier);
+  });
+  return {x,y,color,label};
+}
+function renderOverlays(root) {
+  root.appendChild(el('h2','','Lap overlays · distance around the track'));
+  if (O.context !== overlayContext()) { root.appendChild(el('p','compare-note','Loading recorded lap traces…')); return; }
+  if (O.error) { root.appendChild(el('p','compare-note',O.error)); return; }
+  const own=O.catalog?.drivers?.find(d=>d.you), rivals=O.catalog?.drivers?.filter(d=>!d.you) || [];
+  if (!own || !rivals.length) { root.appendChild(el('p','compare-note','Waiting for driving traces. Run laps with other cars in practice, qualifying, or a race. Traces begin when this version of the recorder starts; earlier opponent laps cannot be reconstructed.')); return; }
+  const rival=rivals.find(d=>d.id===O.driver);
+  if (!rival) return;
+  const bar=el('div','toolbar'); bar.style.flexWrap='wrap';
+  function selector(label, id, options, selected, change) {
+    const wrap=el('label','',label+' '), select=el('select'); select.id=id;
+    for (const [value,text] of options) { const o=el('option','',text); o.value=value; o.selected=String(value)===String(selected); select.appendChild(o); }
+    select.addEventListener('change',()=>{ change(select.value); select.blur(); overlaySelectionChanged(); });
+    wrap.appendChild(select);bar.appendChild(wrap);
+  }
+  selector('Opponent','overlay-driver',rivals.map(d=>[d.id,d.name]),O.driver,v=>{O.driver=Number(v);O.rivalLap=null;S.opponent=O.driver;});
+  selector('Your lap','overlay-own',own.laps.map(l=>[l.lap,overlayLabel(l)]),O.ownLap,v=>O.ownLap=Number(v));
+  selector('Their lap','overlay-rival',rival.laps.map(l=>[l.lap,overlayLabel(l)]),O.rivalLap,v=>O.rivalLap=Number(v));
+  root.appendChild(bar);
+  root.appendChild(el('p','compare-note','Blue = you · Orange = opponent. Both curves use distance from the start line, so braking and throttle line up at the same corner. Recent six laps per driver are retained; partial, invalid, and pit laps are labelled.'));
+  if (!O.own?.rows?.length || !O.rival?.rows?.length) { root.appendChild(el('p','compare-note','Loading the selected laps…')); return; }
+  const a=O.own.rows,b=O.rival.rows;
+  let start=Math.max(a[0][0],b[0][0]), end=Math.min(a.at(-1)[0],b.at(-1)[0]);
+  if (end<=start) {root.appendChild(el('p','compare-note','These laps do not yet share a recorded section of track.'));return;}
+  const zoom=el('div','toolbar');zoom.style.flexWrap='wrap';
+  const sectors=isSaved()? [S.session?.sector2_start_m,S.session?.sector3_start_m] : [S.live?.session?.sector2_start_m,S.live?.session?.sector3_start_m];
+  for (const [key,text] of [['all','Full lap'],['1','Sector 1'],['2','Sector 2'],['3','Sector 3']]) {
+    const button=el('button','chip'+(O.range===key?' active':''),text);
+    button.addEventListener('click',()=>{O.range=key;renderTab();});zoom.appendChild(button);
+  }
+  root.appendChild(zoom);
+  if (sectors.every(v=>v>0)) {
+    if(O.range==='1') end=Math.min(end,sectors[0]);
+    if(O.range==='2') {start=Math.max(start,sectors[0]);end=Math.min(end,sectors[1]);}
+    if(O.range==='3') start=Math.max(start,sectors[1]);
+  }
+  if(end<=start) {root.appendChild(el('p','compare-note','No shared recorded data in this sector yet.'));return;}
+  const scrub=el('input');scrub.type='range';scrub.min=start;scrub.max=end;scrub.step=1;scrub.value=clamp(S.cursor??start,start,end);scrub.style.width='100%';scrub.setAttribute('aria-label','Track distance in metres');
+  scrub.addEventListener('input',()=>{S.cursor=Number(scrub.value);redrawCharts();});root.appendChild(scrub);
+  for(const [name,col,mult,max] of [[`Speed (${speedUnit()})`,2,speedUnit()==='mph'?.621371:1,null],['Throttle (%)',3,100,100],['Brake (%)',4,100,100]]) {
+    const chart=new Chart(root,{name,height:180,yMin:0,yMax:max,readout:d=>{
+      if(d==null)return 'Move over a graph or use the distance slider';
+      const av=overlayValue(a,d,col),bv=overlayValue(b,d,col);
+      return `${Math.round(d)} m · YOU ${av==null?'—':(av*mult).toFixed(0)} · OPPONENT ${bv==null?'—':(bv*mult).toFixed(0)}`;
+    }});
+    drawChart(chart,[overlaySeries(a,col,mult,'#57c7f5','You'),overlaySeries(b,col,mult,'#ff9f43','Opponent')],start,end,O.range==='all' && sectors.every(v=>v>0)?sectors:undefined);
+  }
+}
+
 R.compare = (root) => {
   root.appendChild(el('h2', '', 'You vs others'));
-  if (isSaved()) { root.appendChild(el('div', 'empty', 'Driver comparisons are live only. Saved sessions contain your driving traces. Choose Live in the top bar to compare the current field.')); return; }
+  if (isSaved()) { renderOverlays(root); return; }
   const L = S.live;
   if (L && !L.connected) root.appendChild(el('p', 'compare-note', 'No live signal — showing the last received values.'));
   else if (L?.session?.paused) root.appendChild(el('p', 'compare-note', 'Game paused — values are not updating.'));
@@ -640,6 +758,7 @@ R.compare = (root) => {
       ['Sector 2', you.s2_ms, rival.s2_ms, 'time'], ['Sector 3', you.s3_ms, rival.s3_ms, 'time']]);
     return;
   }
+  renderOverlays(root);
   const data = L?.comparison;
   if (!data) { root.appendChild(el('div', 'empty', 'Waiting for comparison data. If the app was just updated, save and restart Race Engineer.')); return; }
   if (S.comparisonSession !== data.session_id) { S.comparisonSession = data.session_id; S.opponent = null; }
@@ -650,7 +769,7 @@ R.compare = (root) => {
   const bar = el('div', 'toolbar'), label = el('label', '', 'Compare with '), select = el('select');
   select.id = 'opponent'; label.htmlFor = 'opponent';
   for (const d of rivals) { const opt = el('option', '', `P${d.position} · ${d.name}${d.ai ? ' · AI' : ''}`); opt.value = d.id; opt.selected = d.id === rival.id; select.appendChild(opt); }
-  select.addEventListener('change', () => { S.opponent = Number(select.value); select.blur(); renderTab(); });
+  select.addEventListener('change', () => { S.opponent = Number(select.value); O.driver = S.opponent; O.rivalLap = null; select.blur(); overlaySelectionChanged(); });
   select.addEventListener('blur', () => { S.liveDirty = true; });
   bar.append(label, select); root.appendChild(bar);
   const sharing = rival.access === 'restricted' ? 'This driver restricts telemetry. Fuel, ERS, and tyre wear are hidden.' : rival.access === 'unknown' ? 'Waiting for this driver’s telemetry sharing status.' : 'Detailed telemetry is available where the game supplies it.';
@@ -1078,6 +1197,7 @@ function renderTop() {
 }
 function renderTabs() { const n = $('#tabs'); n.innerHTML = ''; for (const [id, label] of TABS) { const b = el('button', id === S.tab ? 'active' : '', label); b.addEventListener('click', () => { S.tab = id; charts.length = 0; renderTab(true); renderTabs(); }); n.appendChild(b); } }
 function renderTab(force) {
+  if (!force && S.tab === 'compare' && $('#content select:focus, #content input[type=range]:active')) return;
   const root = $('#content');
   const scrollY = root.scrollTop;
   charts.length = 0; root.innerHTML = '';
@@ -1088,7 +1208,7 @@ function renderTab(force) {
 function tick() {
   const now = performance.now();
   if (now - S.lastRender > 330 && S.editingCorner == null) {
-    if (S.liveDirty) { S.liveDirty = false; S.lastRender = now; renderTop(); renderTower(); if (S.tab === 'live' || (S.tab === 'compare' && !$('#opponent:focus'))) renderTab(); }
+    if (S.liveDirty) { S.liveDirty = false; S.lastRender = now; renderTop(); renderTower(); if (S.tab === 'live') renderTab(); }
     if (S.dataDirty) { S.dataDirty = false; S.lastRender = now; renderTower(); renderTab(); }
   }
   // keep the current lap trace flowing (at most ~2 requests a second)
@@ -1096,7 +1216,7 @@ function tick() {
   requestAnimationFrame(tick);
 }
 window.addEventListener('resize', () => { S.dataDirty = true; });
-renderTabs(); poll(); pollLaps(); pollSession(); pollSessions(); tick();
+renderTabs(); poll(); pollLaps(); pollSession(); pollSessions(); pollOverlays(); tick();
 </script>
 </body>
 </html>

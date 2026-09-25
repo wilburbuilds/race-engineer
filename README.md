@@ -13,3 +13,9 @@ Source: `App.swift` is the native Cocoa/WebKit shell. `app_backend.py` manages r
 Validation completed: Swift build, code-sign verification, comparison tests, packet layout checks, bundled-runtime startup, HTTP dashboard, duplicate instance prevention, synthetic UDP recording and flush on parent EOF, and native window displaying actual Baku telemetry.
 
 Logs: `~/Library/Logs/Race Engineer/app.log`.
+
+## Opponent lap overlays
+
+In **You vs others**, choose an opponent, your lap, and their lap. Speed, throttle, and brake graphs share distance from the start line. Select a sector to zoom and move the shared cursor to compare inputs at a corner. Both laps must contain recorded data in the selected section.
+
+The recorder retains the six most recent laps per driver at up to 10 Hz, with a 6,000-sample cap per lap. It labels incomplete, invalid, pit, and interrupted laps. Opponent traces are stored locally in each session’s `opponents.json`; they are excluded from GitHub with the recordings directory. Older recordings cannot be reconstructed, and Time Trial ghosts provide timing comparisons only.
