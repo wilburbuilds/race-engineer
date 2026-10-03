@@ -32,7 +32,9 @@ with tempfile.TemporaryDirectory() as temp:
         live=json.load(urllib.request.urlopen(url+'/api/live',timeout=5))
         assert 'comparison' in live
         html=urllib.request.urlopen(url,timeout=5).read().decode()
-        assert 'You vs others' in html
+        assert 'You vs others' in html and 'Your engineer' in html
+        coaching=json.load(urllib.request.urlopen(url+'/api/coaching',timeout=5))
+        assert 'next_action' in coaching and coaching['worker_status']=='idle'
         duplicate=subprocess.run(cmd,input='',capture_output=True,text=True,timeout=10)
         assert duplicate.returncode != 0 and 'already recording' in duplicate.stderr
         sender=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)

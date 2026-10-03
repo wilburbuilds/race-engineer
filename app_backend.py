@@ -53,7 +53,11 @@ def main():
     finally:
         listener.stop()
         listener.join(timeout=2)
-        logger.flush()
+        folder = logger.flush()
+        try:
+            logger.coaching.finish(folder)
+        except Exception as error:
+            print(f"Could not finish coaching report: {error}", file=sys.stderr)
         if dashboard:
             dashboard.httpd.shutdown()
             dashboard.httpd.server_close()

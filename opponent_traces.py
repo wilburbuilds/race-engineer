@@ -97,8 +97,12 @@ class OpponentTraces:
                 record['gaps'] = True
                 continue
             rows.append([round(distance, 2), values[1], values[2], round(values[3], 3), round(values[4], 3), values[5], round(now, 3)])
-            while len(driver['laps']) > self.MAX_LAPS:
-                del driver['laps'][min(driver['laps'])]
+            clean = [r for r in driver['laps'].values() if r['finished'] and r['full'] and not r['invalid'] and not r['pit'] and r['time_ms']]
+            best = min(clean, key=lambda r:r['time_ms'])['lap'] if clean else None
+            keep = set(sorted(driver['laps'])[-self.MAX_LAPS:])
+            if best is not None: keep.add(best)
+            for old in list(driver['laps']):
+                if old not in keep: del driver['laps'][old]
             self.revision += 1
 
     def snapshot(self, include_rows=False):

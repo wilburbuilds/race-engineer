@@ -53,10 +53,12 @@ except ImportError:                   # pragma: no cover - Windows
     import msvcrt as _MSVCRT          # type: ignore[no-redef]
 
 from opponent_traces import OpponentTraces
+from coaching import CoachingService, load_json
+from setup_baseline import SetupBaselineService
 
 from f1_udp import (RaceState, TelemetryListener, DEFAULT_PORT, INFRINGEMENTS, PENALTY_TYPES,
                     TRACKS, SESSION_TYPES, WEATHER, SAFETY_CAR, FLAGS, VISUAL_COMPOUND, ACTUAL_COMPOUND,
-                    FUEL_MIX, ERS_MODE, DRIVER_STATUS, TEAMS, PKT_LAP, PKT_TELEMETRY,
+                    FUEL_MIX, ERS_MODE, DRIVER_STATUS, TEAMS, PKT_LAP, PKT_TELEMETRY, PKT_SETUPS, PKT_EVENT, PKT_HISTORY,
                     fmt_lap, fmt_lap_spoken, sector_ms)
 
 def load_env(path: Path | None = None) -> None:
@@ -573,6 +575,13 @@ class SessionLogger:
     def __init__(self, state: RaceState, root: Path = SESSIONS_DIR):
         self.state = state
         self.opponents = OpponentTraces(state)
+        self.coaching = CoachingService()
+        self.setup_baselines = SetupBaselineService(root.parent / 'setup-baselines')
+        self.setup_history = []
+        self.incident_timeline = []
+        self.lap_flags = {}
+        self.session_ended = False
+        self.coaching_lap_count = 0
         self.root = root
         self.folder: Path | None = None
         self.session_uid: int | None = None
@@ -583,15 +592,18 @@ class SessionLogger:
         self.last_lap_num: int | None = None
         self.last_flush = time.time()
         self.io_lock = threading.Lock()
+        self.write_queue = queue.Queue()
+        threading.Thread(target=self._writer_loop, daemon=True, name="recording-writer").start()
         state.on_packet = self.on_packet
         state.on_session_end = self.on_session_end
         threading.Thread(target=self._flush_loop, daemon=True, name="logger-flush").start()
 
     # called under state.lock, just before the game's next session wipes the state
     def on_session_end(self) -> None:
+        self.session_ended = True
         payload = self._collect_locked()
         if payload:
-            threading.Thread(target=self._write, args=payload, daemon=True).start()
+            self.write_queue.put((payload, None, None))
         self._reset_buffers()
 
     # called under state.lock
@@ -601,13 +613,43 @@ class SessionLogger:
         if st.session_uid != self.session_uid:
             self._reset_buffers()
             self.session_uid = st.session_uid
+        if pid == PKT_HISTORY:
+            history = st.player_history()
+            count = sum(1 for l in history['laps'] if l['lapTimeInMS'] > 0) if history else 0
+            if count > self.coaching_lap_count:
+                self.coaching_lap_count = count
+                threading.Thread(target=self.flush, daemon=True, name='lap-save').start()
         lap = st.player(st.lap)
+        if pid == PKT_SETUPS:
+            setup = st.player(st.setup)
+            if setup and (not self.setup_history or setup != self.setup_history[-1]['setup']):
+                self.setup_history.append({'revision': len(self.setup_history)+1, 'session_time_s': st.session_time,
+                                           'lap': lap.get('currentLapNum') if lap else None, 'setup': dict(setup)})
+        if pid == PKT_EVENT and getattr(st, 'latest_event', None):
+            event = st.latest_event
+            code = event.get('code')
+            if code != 'BUTN':
+                self.incident_timeline.append(dict(event, lap=lap.get('currentLapNum') if lap else None,
+                                                  description=st.describe_event(event)))
+            if code == 'SEND': self.session_ended = True
+            if lap and (code == 'FLBK' or code == 'COLL' and st.player_idx in (event.get('vehicle1Idx'),event.get('vehicle2Idx'))):
+                self.lap_flags.setdefault(lap['currentLapNum'], {})['interrupted'] = True
         if not lap:
             return
         if pid == PKT_LAP:
             if self.last_lap_num is not None and lap["currentLapNum"] > self.last_lap_num and lap["lastLapTimeInMS"] > 0:
                 self._snapshot_lap(lap["currentLapNum"] - 1, lap)
             self.last_lap_num = lap["currentLapNum"]
+            flags = self.lap_flags.setdefault(lap['currentLapNum'], {'pit_lap':False,'interrupted':False})
+            flags.setdefault('pit_lap',False)
+            flags.setdefault('interrupted',False)
+            flags['pit_lap'] |= bool(lap['pitStatus']) or lap['driverStatus'] in (0,2,3)
+            flags['interrupted'] |= bool(st.session and st.session.get('safetyCarStatus'))
+            cs = st.player(st.status)
+            flags['interrupted'] |= bool(cs and cs.get('vehicleFiaFlags',-1) in (2,3))
+            revision = self.setup_history[-1]['revision'] if self.setup_history else None
+            if 'setup_revision' in flags and flags['setup_revision'] != revision: flags['interrupted'] = True
+            flags.setdefault('setup_revision', revision)
         elif pid == PKT_TELEMETRY:
             tel = st.player(st.telemetry)
             if not tel or lap["driverStatus"] == 0 or (st.session and st.session["gamePaused"]):
@@ -636,6 +678,7 @@ class SessionLogger:
             ]
             self.trace.append(row)
             self.by_lap.setdefault(lap["currentLapNum"], []).append(row)
+            self._snapshot_lap(lap["currentLapNum"], lap)
 
     def _reset_buffers(self) -> None:
         self.session_uid = None
@@ -645,8 +688,16 @@ class SessionLogger:
         self.trace_flushed = 0
         self.lap_snapshots = {}
         self.last_lap_num = None
+        self.setup_history = []
+        self.incident_timeline = []
+        self.lap_flags = {}
+        self.session_ended = False
+        self.coaching_lap_count = 0
 
     def _snapshot_lap(self, lap_num: int, lap: dict) -> None:
+        # Keep the final on-track sample for that lap; next-lap packets may already carry new tyres.
+        if lap_num < lap['currentLapNum'] and lap_num in self.lap_snapshots:
+            return
         st = self.state
         cs = st.player(st.status)
         dmg = st.player(st.damage)
@@ -663,7 +714,13 @@ class SessionLogger:
         if dmg:
             w = dmg["tyresWear"]
             snap.update({"wear_fl": round(w[2], 1), "wear_fr": round(w[3], 1), "wear_rl": round(w[0], 1), "wear_rr": round(w[1], 1),
-                         "front_wing_damage": max(dmg["frontLeftWingDamage"], dmg["frontRightWingDamage"])})
+                         "front_wing_damage": max(dmg["frontLeftWingDamage"], dmg["frontRightWingDamage"]), "rear_wing_damage": dmg["rearWingDamage"]})
+        if st.session:
+            snap['weather'] = st.session['weather']
+            snap['track_temp_c'] = st.session['trackTemperature']
+            snap['assists_key'] = json.dumps([st.session.get(k) for k in ('tractionControlAssist','antiLockBrakesAssist','gearboxAssist','brakingAssist','steeringAssist')])
+        snap.update(self.lap_flags.get(lap_num, {}))
+        snap['setup_revision'] = self.lap_flags.get(lap_num, {}).get('setup_revision', self.setup_history[-1]['revision'] if self.setup_history else None)
         self.lap_snapshots[lap_num] = snap
 
     def _ensure_folder(self) -> Path | None:
@@ -689,13 +746,28 @@ class SessionLogger:
             if time.time() - self.last_flush > 20:
                 self.flush()
 
+    def _writer_loop(self):
+        while True:
+            payload, done, errors = self.write_queue.get()
+            try:
+                self._write(*payload)
+            except Exception as error:
+                if errors is not None: errors.append(error)
+                print(f'(recording write error: {error})', file=sys.stderr)
+            finally:
+                if done: done.set()
+                self.write_queue.task_done()
+
     def flush(self) -> Path | None:
-        """Write everything to disk. Safe to call any time (takes the state lock)."""
+        """Queue under the state lock so append order matches sample reservation order."""
+        done = threading.Event()
+        errors = []
         with self.state.lock:
             payload = self._collect_locked()
-        if not payload:
-            return None
-        self._write(*payload)
+            if payload: self.write_queue.put((payload, done, errors))
+        if not payload: return None
+        if not done.wait(10): raise RuntimeError('Recording save timed out')
+        if errors: raise errors[0]
         return payload[0]
 
     def _collect_locked(self):
@@ -716,17 +788,20 @@ class SessionLogger:
                     w.writerow(self.TRACE_COLUMNS)
                 w.writerows(new_rows)
             if laps:
-                with open(folder / "laps.csv", "w", newline="") as fh:
+                with open(folder / "laps.csv.tmp", "w", newline="") as fh:
                     w = csv.DictWriter(fh, fieldnames=list(laps[0].keys()))
                     w.writeheader()
                     w.writerows(laps)
-            with open(folder / "session.json", "w") as fh:
+                (folder / "laps.csv.tmp").replace(folder / "laps.csv")
+            with open(folder / "session.json.tmp", "w") as fh:
                 json.dump(info, fh, indent=1)
+            (folder / "session.json.tmp").replace(folder / "session.json")
             path = folder / "opponents.json"
             temporary = folder / "opponents.json.tmp"
             temporary.write_text(json.dumps(opponents, separators=(",", ":")))
             temporary.replace(path)
         self.last_flush = time.time()
+        if laps: self.coaching.request(folder)
 
     def _laps_table_locked(self) -> list[dict]:
         st = self.state
@@ -769,7 +844,7 @@ class SessionLogger:
                                      "braking": s["brakingAssist"], "steering": s["steeringAssist"],
                                      "pit": s["pitAssist"], "ers": s["ERSAssist"]},
                          "sector2_start_m": s["sector2LapDistanceStart"], "sector3_start_m": s["sector3LapDistanceStart"],
-                         "regulations_2026": s["formula"] == 13})
+                         "regulations_2026": s["formula"] == 13,"formula":s["formula"]})
         setup = st.player(st.setup)
         if setup:
             info["setup"] = setup
@@ -786,10 +861,14 @@ class SessionLogger:
             info["tyre_sets"] = [{"compound": VISUAL_COMPOUND.get(t["visualTyreCompound"], "?"), "wear": t["wear"],
                                   "fitted": bool(t["fitted"]), "delta_s_per_lap": t["lapDeltaTime"] / 1000}
                                  for t in st.tyre_sets["sets"] if t["available"]]
-        info["events"] = [st.describe_event(e) for e in st.events][-60:]
+        info['setup_history'] = list(self.setup_history)
+        info['incident_timeline'] = list(self.incident_timeline)
+        info['last_session_time_s'] = st.session_time
+        info['session_ended'] = self.session_ended
+        info["events"] = [st.describe_event(e) for e in st.events if e.get('code') != 'BUTN'][-60:]
         if st.final:
             info["final_classification"] = [
-                {"position": r["position"], "driver": st.car_name(i), "best_lap": fmt_lap(r["bestLapTimeInMS"]),
+                {"position": r["position"], "driver": st.car_name(i), "you": i == st.player_idx, "best_lap": fmt_lap(r["bestLapTimeInMS"]),
                  "stops": r["numPitStops"], "penalties_s": r["penaltiesTime"]}
                 for i, r in enumerate(st.final["rows"]) if r["position"]]
             info["final_classification"].sort(key=lambda r: r["position"])
@@ -826,7 +905,15 @@ class DashboardServer:
                 try:
                     length = int(self.headers.get("Content-Length", 0))
                     body = json.loads(self.rfile.read(length) or b"{}")
-                    if url.path == "/api/corner-names":
+                    if url.path == '/api/coaching':
+                        folder = app.coaching_folder(body.get('session',''))
+                        if not folder: raise ValueError('No recorded session available')
+                        self._json(app.logger.coaching.update(folder, body.get('symptom'),
+                            body.get('start_trial',False), body.get('clear_trial',False),body.get('goal')))
+                    elif url.path == '/api/setup-baseline':
+                        info,goal=app.setup_context(body.get('session',''))
+                        self._json(app.logger.setup_baselines.get(info,goal,refresh=True))
+                    elif url.path == "/api/corner-names":
                         self._json(app.save_corner_names(body.get("track", ""), body.get("names", [])))
                     else:
                         self.send_error(404)
@@ -855,6 +942,12 @@ class DashboardServer:
                         self.send_header("Cache-Control", "no-store")
                         self.end_headers()
                         self.wfile.write(body)
+                    elif url.path == '/api/setup-baseline':
+                        info,goal=app.setup_context(q.get('session',[''])[0])
+                        self._json(app.logger.setup_baselines.get(info,goal))
+                    elif url.path == '/api/coaching':
+                        folder = app.coaching_folder(q.get('session',[''])[0])
+                        self._json(app.logger.coaching.get(folder) if folder else {'next_action':'Start a session and complete a timed lap to begin coaching.', 'laps':[], 'worker_status':'idle'})
                     elif url.path == "/api/live":
                         self._json(app.live_json())
                     elif url.path == "/api/opponents":
@@ -1026,6 +1119,23 @@ class DashboardServer:
                                      for k, v in st.time_trial.items()}
             out["events"] = [{"t": e["sessionTime"], "text": st.describe_event(e)} for e in list(st.events)[-12:]]
             return out
+
+    def setup_context(self,sid=''):
+        folder=self.coaching_folder(sid)
+        info=load_json(folder/'session.json',{}) if folder else {}
+        state=load_json(folder/'coaching-state.json',{}) if folder else {}
+        if not sid:
+            with self.state.lock:
+                session=self.state.session
+                if session:
+                    info=dict(info,track=TRACKS.get(session['trackId']),formula=session['formula'],regulations_2026=session['formula']==13,
+                              weather=WEATHER.get(session['weather']),setup=dict(self.state.player(self.state.setup) or {}),
+                              assists={'traction_control':session['tractionControlAssist'],'abs':session['antiLockBrakesAssist']})
+        return info,state.get('goal','qualifying')
+
+    def coaching_folder(self, sid=''):
+        if sid: return self._saved_dir(sid)
+        return self.logger.folder
 
     def opponents_json(self, sid="", driver_id=None, lap=None) -> dict:
         if not sid:

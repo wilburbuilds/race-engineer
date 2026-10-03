@@ -149,6 +149,129 @@
   .events li { padding: 4px 0; border-bottom: 1px solid var(--line-soft); }
   .events li .num { color: var(--dim); margin-right: 10px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .coach-card {background:var(--panel);border:1px solid var(--line-soft);padding:18px 22px;margin-bottom:14px;max-width:1000px;}
+  .coach-card p {line-height:1.6;max-width:85ch;margin:8px 0;}
+  .coach-card h3 {font-size:14px;margin:16px 0 4px;color:var(--muted);}
+  .coach-next {border-left:4px solid var(--ref);}
+  .coach-next > p:first-of-type {font-size:19px;}
+  .coach-card summary {cursor:pointer;font-weight:600;}
+  button:disabled {opacity:.45;cursor:default;}
+/* Shared visual hierarchy: restrained surfaces, numeric emphasis, clear interaction states. */
+:root { --bg:#0d1118; --panel:#151b25; --panel-2:#1b2431; --line:#303c4d; --line-soft:#253040; --text:#f0f4f9; --muted:#a1afc2; --dim:#8290a5; --font-num:"Avenir Next","Helvetica Neue",sans-serif; }
+html,body {font-size:13px;}
+#top {min-height:64px;background:#101620;}
+#brand {min-width:170px;padding:14px 22px;border:0;}
+#brand .title {font-family:var(--font);font-size:15px;font-weight:750;letter-spacing:.045em;}
+#brand .sub {font-size:11px;color:var(--dim);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#sessline {gap:12px;padding:0 14px;font-size:12px;flex-wrap:wrap;}
+#sessline b {font-size:17px;}
+#conn {font-size:11px;white-space:nowrap;border:0;}
+#conn.on .dot {box-shadow:none;}
+#pick {border:0;}
+#pick select {border-radius:7px;padding:8px 10px;max-width:300px;}
+#tabs {align-items:center;padding:8px 16px;gap:3px;background:#101620;min-height:55px;}
+#tabs button {display:flex;gap:7px;align-items:center;font-family:var(--font);font-size:12px;font-weight:550;text-transform:none;letter-spacing:0;padding:9px 11px;border:0;border-radius:7px;}
+#tabs button.active {background:#223447;color:var(--ref);border:0;}
+#tabs .nav-group {display:flex;align-items:center;gap:2px;}
+#tabs .nav-group+.nav-group {margin-left:8px;padding-left:10px;border-left:1px solid var(--line);}
+#tabs .nav-label {font-size:10px;color:var(--dim);margin:0 7px 0 2px;}
+.icon {width:18px;height:18px;flex-shrink:0;vertical-align:middle;}
+#layout.wide #tower {display:none;}
+#tower {flex-basis:300px;background:#101620;}
+#tower .head,.laprow {grid-template-columns:28px 1fr 47px 47px 47px 24px;gap:3px;}
+#tower .head {color:var(--muted);padding:14px 10px 9px;}
+.laprow {padding:9px 10px;font-size:13px;}
+.laprow .s {font-size:11px;}
+#tower .legend {font-size:10px;gap:10px;}
+#content {padding:24px 28px 48px;}
+.page-head {display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:18px;}
+.page-head h1 {font-size:26px;font-weight:650;letter-spacing:-.035em;margin:0;}
+.page-head p {margin:4px 0 0;color:var(--muted);font-size:12px;}
+.page-body {max-width:1400px;margin:0 auto;}
+.page-head {max-width:1400px;margin-left:auto;margin-right:auto;}
+h2 {font-family:var(--font);font-size:16px;letter-spacing:-.02em;line-height:1.35;font-weight:650;}
+h3 {font-size:13px;line-height:1.4;font-weight:600;}
+p {line-height:1.55;}
+.muted {color:var(--muted);}.small {font-size:11px;}.positive {color:var(--green);}.negative {color:var(--red);}
+.eyebrow {font-size:10px;font-weight:650;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);}
+.visual-panel,.tile,.mapwrap,.chart,.setting-group {border:1px solid var(--line-soft);background:var(--panel);border-radius:10px;}
+.visual-panel {padding:20px;min-width:0;}
+.visual-panel h2 {margin:8px 0;}.visual-panel p {margin:8px 0;}
+.panel-head {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.panel-head h2 {margin:0;}.panel-head .muted {font-size:11px;}
+.metric-strip {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px;}
+.visual-metric {padding:16px 18px;background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;min-width:0;}
+.metric-value {font-size:31px;letter-spacing:-.035em;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:5px;}
+.metric-detail {font-size:11px;color:var(--muted);margin-top:5px;}
+.visual-metric.violet .metric-value {color:var(--purple);}.visual-metric.orange .metric-value {color:var(--cmp);}
+.quality-bar {display:flex;gap:3px;height:4px;margin-top:10px;}.quality-bar i {background:var(--line);flex:1;border-radius:2px;}.quality-bar .filled {background:var(--ref);}
+.engineer-toolbar {display:flex;justify-content:space-between;align-items:center;margin:-6px 0 16px;}
+.badge {display:inline-flex;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:5px;font-size:10px;font-weight:600;color:var(--muted);line-height:1.25;}
+.badge.positive {color:#84deac;background:#17362a;border-color:#275341;}.badge.caution {color:#e8c48b;background:#30271c;border-color:#4b3c27;}
+.button {display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:6px;border:1px solid var(--line);padding:9px 13px;font-size:12px;font-weight:600;}
+.button.primary {background:var(--ref);border-color:var(--ref);color:#0b1a24;}.button.secondary {background:var(--panel-2);color:var(--text);}.button.quiet {color:var(--muted);border-color:transparent;}
+.button:hover {filter:brightness(1.13);}.button:disabled {filter:none;}
+.chip {border-radius:5px;padding:6px 10px;}.chip.active {color:var(--ref);border-color:#4b8dac;background:#1c3445;}
+.coach-grid {display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:18px;margin-bottom:18px;}
+.action-panel {display:flex;flex-direction:column;align-items:flex-start;}
+.action-title {font-size:28px!important;letter-spacing:-.035em;max-width:24ch;margin-top:13px!important;}
+.action-panel>p {max-width:60ch;font-size:13px;}
+.confidence-row {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:18px;font-size:11px;}
+.condition-tags {display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;}
+.condition-tags .badge {font-size:9px;font-weight:500;}
+.teaching-cue {display:flex;align-items:center;gap:22px;margin:19px 0 7px;}
+.cue {display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11px;color:var(--ref);}
+.cue:first-child {color:#ff9292;}.cue:nth-child(2) {color:#b2bdd0;}
+.cue svg {width:38px;height:43px;}.cue span {color:var(--text);}
+.focus-track {width:100%;height:155px;display:block;margin:10px auto 4px;}
+.focus-numbers {display:grid;grid-template-columns:1fr 1.2fr;gap:12px;margin:6px 0 14px;}
+.focus-numbers .visual-metric {padding:0;border:0;background:none;}
+.focus-numbers .metric-value {font-size:24px;}.focus-numbers .metric-detail {font-size:10px;}
+.focus-panel>.button {width:100%;}
+.baseline-dots {display:flex;justify-content:center;gap:14px;padding:32px 0 24px;}
+.baseline-dots span {display:flex;align-items:center;justify-content:center;width:48px;height:48px;border:1px dashed var(--line);border-radius:50%;color:var(--dim);font-weight:600;font-size:18px;}
+.baseline-dots .complete {background:#17362a;border:1px solid #275341;color:#84deac;}
+.focus-panel>h3,.focus-panel>p {text-align:center;}
+.onboarding {text-align:center;padding:50px;}.onboarding>.icon {height:40px;width:40px;color:var(--ref);margin-bottom:12px;}
+.feedback-panel {display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:16px;}
+.feedback-panel h2 {margin:0;}.feedback-options {display:flex;gap:8px;flex-wrap:wrap;}
+.feedback-option {display:flex;align-items:center;gap:9px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:11px 16px;font-size:12px;}
+.feedback-option.active {background:#20384a;border-color:var(--ref);color:var(--ref);}
+.setup-change {display:flex;gap:15px;align-items:center;margin-top:14px;flex-wrap:wrap;}.setup-change>span {font-size:12px;color:var(--muted);}.setup-change>b {font-size:31px;font-variant-numeric:tabular-nums;}.setup-change .proposed {color:var(--ref);}
+.practice-steps {display:grid;grid-template-columns:repeat(4,1fr);width:100%;gap:12px;margin:18px 0;}
+.practice-step {display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--line);padding-top:10px;color:var(--dim);font-size:10px;}.practice-step .icon {width:16px;height:16px;}.practice-step.done {border-color:var(--green);color:var(--green);}.practice-step b {color:var(--text);font-size:11px;}.practice-step span {color:var(--muted);}
+.test-verdict {border-top:1px solid var(--line);margin:10px 0;padding-top:12px;font-size:12px;display:flex;gap:15px;align-items:center;}.test-verdict b {font-size:26px;white-space:nowrap;}
+.lap-timeline {margin-bottom:18px;padding:18px 20px;}
+.chart-key {display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:10px;color:var(--muted);}
+.chart-key>span {display:flex;gap:6px;align-items:center;}.chart-key i {width:10px;height:10px;display:inline-block;border-radius:2px;background:var(--ref);}.chart-key i.excluded {background:#465367;}.chart-key i.pit {background:#b090d7;}
+.lap-rail {display:flex;align-items:flex-end;gap:5px;padding:18px 0 0;overflow-x:auto;min-height:112px;}
+.rhythm-lap {flex:1;min-width:23px;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0 2px 6px;}
+.rhythm-bar {display:block;width:100%;max-width:32px;border-radius:4px 4px 0 0;background:var(--ref);opacity:.8;}.rhythm-lap.excluded .rhythm-bar {background:repeating-linear-gradient(135deg,#465367 0,#465367 3px,#354153 3px,#354153 6px);}.rhythm-lap.pit .rhythm-bar {background:#b090d7;}
+.rhythm-lap.selected .rhythm-bar,.rhythm-lap:hover .rhythm-bar {opacity:1;box-shadow:0 0 0 2px var(--text);}.lap-number {font-variant-numeric:tabular-nums;color:var(--muted);font-size:10px;}
+.compound-mark {height:3px;width:14px;display:block;border-radius:2px;background:var(--line);}.compound-mark.soft {background:#fb777f;}.compound-mark.medium {background:#e8c96a;}.compound-mark.hard {background:#c9d2df;}
+.rhythm-selection {display:flex;align-items:center;gap:10px;min-height:35px;font-size:11px;}.rhythm-selection>span:last-child {color:var(--muted);}
+.stint-rail {display:flex;margin-top:6px;gap:4px;}.stint {font-size:9px;padding:4px 8px;border-radius:3px;background:var(--panel-2);color:var(--dim);text-align:center;overflow:hidden;}.stint.hard {color:#c9d2df;border-top:2px solid #c9d2df;}.stint.medium {color:#e8c96a;border-top:2px solid #e8c96a;}.stint.soft {color:#fb777f;border-top:2px solid #fb777f;}
+.insight-grid {display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}.insight-grid h2 {font-size:19px;}.insight-grid p {font-size:12px;}
+.disclosure {border:1px solid var(--line-soft);border-radius:8px;margin-bottom:10px;background:#121923;}
+.disclosure>summary {padding:15px 18px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);}.disclosure[open]>summary {color:var(--text);border-bottom:1px solid var(--line-soft);}.disclosure-body {padding:4px 18px 18px;font-size:12px;}.disclosure-body p {max-width:90ch;}
+.evidence-row {display:flex;gap:12px;align-items:center;padding:6px 0;font-size:11px;color:var(--muted);}.classification-row {display:grid;grid-template-columns:42px 1fr 100px 100px;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft);font-size:12px;}.classification-row.own {color:var(--ref);}.place {font-size:18px;}
+.setup-grid {display:grid;grid-template-columns:1fr 1fr;gap:0 28px;}.setting {display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line-soft);gap:12px;font-size:12px;}.setting>span {color:var(--muted);}
+.inline-notice {border-left:3px solid var(--yellow);padding:12px 16px;background:var(--panel);margin-bottom:16px;font-size:12px;}
+.chart {margin-bottom:16px;overflow:hidden;}.chart .head {padding:15px 17px 3px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;}.chart .head .name {font-family:var(--font);font-size:13px;font-weight:600;letter-spacing:0;}.chart .head .read {margin-left:auto;font-size:11px;}.chart-legend {display:flex;gap:13px;padding:6px 17px 5px;flex-wrap:wrap;font-size:10px;color:var(--muted);}.chart-legend>span {display:flex;align-items:center;gap:6px;}.chart-legend i {width:16px;height:0;border-top:2px solid;}
+.tile {padding:17px;}.tile .lbl {font-size:11px;}.tile .val {font-size:32px;font-weight:650;}.hero .big .val {font-size:52px;letter-spacing:-.04em;}.hero {gap:14px;}.tile .sub {font-size:11px;line-height:1.5;}.sector {border-radius:5px;font-size:15px;}.bar {height:5px;border-radius:3px;overflow:hidden;}
+.car4 {position:relative;gap:12px 25px;margin-top:14px;}.car4:before {content:'';position:absolute;left:calc(50% - 6px);top:7px;bottom:7px;width:12px;border:1px solid #344356;border-radius:9px;pointer-events:none;}.wheel {background:transparent;border-left:3px solid var(--ref);padding:5px 9px;border-radius:3px;}.wheel:nth-child(2) {border-color:var(--cmp);}.wheel:nth-child(3) {border-color:var(--purple);}.wheel:nth-child(4) {border-color:var(--green);}.wheel .v {font-size:22px;}.wheel .w {font-size:10px;line-height:1.5;}
+.wheel-overview {display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}.wheel-overview .wheel {background:var(--panel);border-top:1px solid var(--line-soft);border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px;border-radius:7px;}
+.toolbar {gap:8px;}.toolbar select,.toolbar input {border-radius:5px;padding:7px 9px;font-size:12px;}.toolbar label {font-size:11px;}.compare-note {font-size:11px;line-height:1.5;max-width:90ch;}
+table {font-family:var(--font);font-size:12px;} th {color:var(--muted);font-size:10px;padding:10px 9px;background:var(--panel);} td {padding:10px 9px;font-variant-numeric:tabular-nums;}.table-scroll {overflow-x:auto;}
+.setting-group {padding:18px 20px;margin-bottom:16px;}.setting-group>h2 {margin:0 0 15px;}.kv {font-size:12px;gap:0 18px;}.kv>div {padding:8px 0;border-bottom:1px solid var(--line-soft);}.kv>div:nth-child(even) {text-align:right;}.setting-group .events {max-height:180px;overflow:auto;font-size:11px;}
+#scrub {border-radius:8px;background:#16202d;box-shadow:0 -5px 22px #0d111866;padding:10px 14px;font-size:11px;}.mapwrap .head {padding:6px 4px 10px;}.mapwrap .head .name {font-family:var(--font);font-size:14px;font-weight:600;}.mapwrap .head .hint {font-size:10px;}.cornerinfo h3 {font-family:var(--font);font-size:22px;}.cornerinfo td,.cornerinfo th {font-size:11px;}
+@media(max-width:1200px) {#tabs .nav-label {display:none;}#tabs button {padding:9px 8px;font-size:11px;}#tabs button .icon {width:15px;}#content {padding:20px;}#sessline {gap:9px;}#pick select {max-width:240px;}#conn {padding:0 12px;}.coach-grid {grid-template-columns:minmax(0,1.25fr) minmax(270px,1fr);}.action-title {font-size:25px!important;}}
+@media(max-width:1000px) {#tabs button .icon {display:none;}#brand {min-width:145px;padding-left:16px;}#sessline .header-weather {display:none;}#pick select {max-width:220px;}#conn {display:none;}#tower {flex-basis:220px;}#tower .head,.laprow {grid-template-columns:25px 1fr 24px;}#tower .head>span:nth-child(n+3):nth-child(-n+5),.laprow .s {display:none;}#tower .legend {flex-wrap:wrap;}.metric-strip {gap:10px;}.visual-metric {padding:13px;}.metric-value {font-size:27px;}.hero {grid-template-columns:2fr 1fr;}.grid {grid-template-columns:1fr 1fr!important;}.grid>.tile:last-child {grid-column:1/-1;}.maprow {grid-template-columns:1fr;}.cornerinfo {border:0;padding:0;}.feedback-panel {align-items:flex-start;flex-direction:column;}.teaching-cue {gap:14px;}}
+@media(max-width:780px) {.coach-grid,.insight-grid {grid-template-columns:1fr;}.metric-strip {grid-template-columns:1fr 1fr;}.two {grid-template-columns:1fr;}.wheel-overview {grid-template-columns:1fr 1fr;}#tower {display:none;}.focus-track {height:130px;}.setup-grid {grid-template-columns:1fr;}}
+
+
+.baseline-panel {margin-bottom:20px;}.baseline-goal {display:flex;align-items:center;gap:10px;margin:12px 0;}.baseline-goal .active {background:#26394a;color:var(--ref);border-color:var(--ref);}.baseline-summary {display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0 14px;}.baseline-summary>div {display:flex;flex-direction:column;gap:6px;}.baseline-summary b {font-size:27px;line-height:1.2;}.baseline-summary .muted {font-size:11px;}.source-line {font-size:12px;margin:10px 0;}.source-line a {color:var(--ref);}.baseline-note {font-size:12px;max-width:85ch;}.baseline-menu {display:grid;grid-template-columns:1fr 1fr;column-gap:30px;}.baseline-setting {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft);font-size:12px;break-inside:avoid;}.setup-values {display:flex;align-items:center;gap:9px;white-space:nowrap;}.setup-values .proposed {color:var(--ref);}.baseline-progress {display:flex;align-items:center;gap:9px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft);font-size:12px;}.baseline-progress>span {border:1px solid var(--line);border-radius:50%;width:25px;height:25px;display:grid;place-items:center;flex-shrink:0;}.baseline-progress .complete {color:var(--green);border-color:var(--green);}.baseline-progress>div {margin-left:8px;color:var(--muted);}.setup-evidence {margin:14px 0;padding:12px;border-left:3px solid var(--ref);background:#57c7f50a;}.setup-evidence p {font-size:13px;margin:9px 0;}.setup-evidence .muted {font-size:11px;}
+@media(max-width:780px){.baseline-summary {grid-template-columns:1fr 1fr;}.baseline-menu {grid-template-columns:1fr;}.baseline-goal {flex-wrap:wrap;}.baseline-progress {flex-wrap:wrap;}}
 </style>
 </head>
 <body>
@@ -177,7 +300,7 @@ const S = {
   ref: null, cmp: null,       // selected lap numbers (ref = A, cmp = B)
   autoRef: true,              // follow the best lap until the user picks one
   cursor: null,               // distance (m) of the cursor / scrubber
-  tab: 'live', opponent: null, comparisonSession: null, corner: 0, cornerList: [],
+  tab: 'engineer', opponent: null, comparisonSession: null, corner: 0, cornerList: [],
   lastRender: 0, liveDirty: true, dataDirty: true, lastTraceFetch: 0, lapsKey: '',
   mode: 'live', savedId: '', sessions: [],
   cornerNames: [], cornerPreset: [], cornerShift: 0, hasPreset: false, cornerNamesTrack: null, editingCorner: null,
@@ -185,7 +308,7 @@ const S = {
 const isSaved = () => S.mode === 'saved';
 function sessInfo() { return S.session; }                                   // session.json style info (live or saved)
 function liveSess() { return isSaved() ? null : (S.live?.session || null); }
-const TABS = [['live', 'Live'], ['compare', 'You vs others'], ['laps', 'Laps'], ['speed', 'Speed'], ['steer', 'Steering & gear'], ['tyres', 'Tyres'],
+const TABS = [['engineer', 'Engineer'], ['live', 'Live'], ['compare', 'You vs others'], ['laps', 'Laps'], ['speed', 'Speed'], ['steer', 'Steering & gear'], ['tyres', 'Tyres'],
               ['brakes', 'Brakes & ERS'], ['corner', 'Corners'], ['session', 'Session']];
 // Column layouts live on each Trace (sessions recorded by older versions have fewer columns).
 
@@ -299,11 +422,13 @@ async function pollLaps() {
 }
 async function openSaved(id) {
   S.mode = id ? 'saved' : 'live'; S.savedId = id || '';
+  S.session = null; S.laps = []; C.report = null; C.key = null;
   S.traces.clear(); S.ref = null; S.cmp = null; S.autoRef = true; S.cornerList = []; S.lapsKey = ''; S.cursor = null;
+  renderTop(); renderTower(); renderTab();
   if (id) {
     try {
       const r = await fetch('/api/saved?id=' + encodeURIComponent(id));
-      if (r.ok) { const j = await r.json(); S.session = j.session || {}; S.cornerNamesTrack = null; loadCornerNames(); applyLaps(j.laps || [], 0, j.trace_laps || []); }
+      if (r.ok) { const j = await r.json(); if (S.savedId !== id) return; S.session = j.session || {}; S.cornerNamesTrack = null; loadCornerNames(); applyLaps(j.laps || [], 0, j.trace_laps || []); }
     } catch (e) { }
     if (S.tab === 'live') { S.tab = 'laps'; renderTabs(); }
   } else { S.laps = []; S.session = null; }
@@ -324,7 +449,7 @@ async function pollSessions() {
 }
 $('#sesspick').addEventListener('change', e => openSaved(e.target.value));
 async function pollSession() {
-  if (!isSaved()) { try { const r = await fetch('/api/session'); if (r.ok) { S.session = await r.json(); if (S.tab === 'session') S.dataDirty = true; } } catch (e) { } }
+  if (!isSaved()) { try { const r = await fetch('/api/session'); if (r.ok) { const j = await r.json(); if (isSaved()) return; S.session = j; if (S.tab === 'session') S.dataDirty = true; } } catch (e) { } }
   setTimeout(pollSession, 5000);
 }
 function trackName() { const s = isSaved() ? S.session : S.live?.session; return s ? (s.track || null) : null; }
@@ -336,7 +461,7 @@ async function loadCornerNames() {
   const len = s ? (s.track_length_m || '') : '';
   try {
     const r = await fetch(`/api/corner-names?track=${encodeURIComponent(tr)}&length=${len}`);
-    if (r.ok) { const j = await r.json(); S.cornerNames = j.names || []; S.cornerPreset = j.preset || []; S.hasPreset = !!j.has_preset; S.cornerShift = +(localStorage_get('shift:' + tr) || 0); S.dataDirty = true; }
+    if (r.ok) { const j = await r.json(); if (tr !== trackName()) return; S.cornerNames = j.names || []; S.cornerPreset = j.preset || []; S.hasPreset = !!j.has_preset; S.cornerShift = +(localStorage_get('shift:' + tr) || 0); S.dataDirty = true; }
   } catch (e) { }
 }
 // tiny persistence for the label shift (in memory + the corner names file would be overkill)
@@ -405,8 +530,18 @@ function setCornerName(c, name) {
   S.cornerNames.sort((a, b) => a[0] - b[0]);
   saveCornerNames(); S.dataDirty = true;
 }
-function bestLap() { let b = null; for (const l of S.laps) if (l.valid && l.time_ms > 0 && (!b || l.time_ms < b.time_ms)) b = l; return b; }
-function bestSectors() { const b = [Infinity, Infinity, Infinity]; for (const l of S.laps) { if (l.s1_ms > 0) b[0] = Math.min(b[0], l.s1_ms); if (l.s2_ms > 0) b[1] = Math.min(b[1], l.s2_ms); if (l.s3_ms > 0) b[2] = Math.min(b[2], l.s3_ms); } return b.map(x => isFinite(x) ? x : null); }
+function eligibleForAnalysis(l) {
+  if (!l.valid) return false;
+  const r = C.key === coachingKey() ? C.report : null;
+  const match = r?.laps?.find(x => x.lap === l.lap);
+  return !match || match.eligible;
+}
+function sectorPool() {
+  const r = C.key === coachingKey() ? C.report : null;
+  return r?.comparable_laps?.length >= 3 ? S.laps.filter(l => r.comparable_laps.includes(l.lap)) : S.laps;
+}
+function bestLap() { let b = null; for (const l of S.laps) if (eligibleForAnalysis(l) && l.time_ms > 0 && (!b || l.time_ms < b.time_ms)) b = l; return b; }
+function bestSectors() { const b = [Infinity, Infinity, Infinity]; for (const l of sectorPool()) { if (!eligibleForAnalysis(l)) continue; if (l.s1_ms > 0) b[0] = Math.min(b[0], l.s1_ms); if (l.s2_ms > 0) b[1] = Math.min(b[1], l.s2_ms); if (l.s3_ms > 0) b[2] = Math.min(b[2], l.s3_ms); } return b.map(x => isFinite(x) ? x : null); }
 
 // ============================================================================ canvas charts
 const charts = [];   // active chart objects on the current tab
@@ -416,6 +551,7 @@ class Chart {
     this.box = el('div', 'chart'); this.head = el('div', 'head'); this.box.appendChild(this.head);
     this.nameEl = el('span', 'name', this.o.name); this.head.appendChild(this.nameEl);
     this.readEl = el('span', 'read'); this.head.appendChild(this.readEl);
+    this.legend = el('div', 'chart-legend'); this.box.appendChild(this.legend);
     this.canvas = document.createElement('canvas'); this.box.appendChild(this.canvas); parent.appendChild(this.box);
     this.canvas.addEventListener('mousemove', e => { const x = e.offsetX; const d = this.xToDist(x); if (d != null) { S.cursor = d; redrawCharts(); syncScrub(); } });
     this.canvas.addEventListener('mouseleave', () => { });
@@ -482,10 +618,14 @@ class Chart {
 }
 function niceStep(range, n) { const raw = range / n, pow = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / pow; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * pow; }
 function redrawCharts() { for (const c of charts) if (c.last) c.draw(...c.last); }
-function drawChart(c, series, xMin, xMax, bands) { c.last = [series, xMin, xMax, bands]; c.draw(series, xMin, xMax, bands); }
+function drawChart(c, series, xMin, xMax, bands) {
+  c.legend.replaceChildren();
+  for (const v of series) { if (!v.label) continue; const item = el('span'); const swatch = el('i'); swatch.style.borderTop = `2px ${v.dash ? 'dashed' : 'solid'} ${v.color}`; item.append(swatch, document.createTextNode(v.label)); c.legend.append(item); }
+  c.last = [series, xMin, xMax, bands]; c.draw(series, xMin, xMax, bands);
+}
 function bandS2() { const s = isSaved() ? S.session : S.live?.session; if (!s || !s.sector2_start_m) return null; return [s.sector2_start_m, s.sector3_start_m]; }
 
-function seriesFor(t, name, color, opts = {}) { if (!t || !t.rows.length || !t.has(name)) return null; return Object.assign({ x: t.dist, y: t.col(name), color }, opts); }
+function seriesFor(t, name, color, opts = {}) { if (!t || !t.rows.length || !t.has(name)) return null; return Object.assign({ x: t.dist, y: t.col(name), color, label: `Lap ${t.lap}` }, opts); }
 function deltaSeries(ref, cmp) {
   if (!ref || !cmp || ref.rows.length < 2 || cmp.rows.length < 2) return null;
   const x = [], y = [], d = ref.dist, tr = ref.time, lim = Math.min(ref.length, cmp.length);
@@ -522,7 +662,7 @@ function lapChips(parent) {
   const a = trace(S.ref), b = trace(S.cmp);
   bar.appendChild(el('span', 'chip ref', S.ref != null ? `A · lap ${S.ref}${a ? ' · ' + fmtLap(a.lapTime) : ''}` : 'A · pick a lap'));
   bar.appendChild(el('span', 'chip cmp', S.cmp != null ? `B · lap ${S.cmp}${b ? ' · ' + fmtLap(b.lapTime) : ''}` : 'B · click "vs" on a lap to compare'));
-  if (S.autoRef) bar.appendChild(el('span', '', 'A follows your best lap; click a lap in the tower to pin it'));
+  if (S.autoRef) bar.appendChild(el('span', '', 'Select a lap to pin your reference'));
   parent.appendChild(bar);
 }
 function xRange() { const a = trace(S.ref), b = trace(S.cmp); const tl = isSaved() ? S.session?.track_length_m : S.live?.session?.track_length_m; const L = Math.max(a ? a.length : 0, b ? b.length : 0, tl || 0); return [0, Math.max(100, L)]; }
@@ -625,6 +765,314 @@ function cornerAcrossLaps(c) {
 
 // ============================================================================ tabs
 const R = {};
+const C = {report:null, key:null, error:null};
+function coachingKey() { return isSaved() ? S.savedId : ''; }
+async function pollCoaching() {
+  const key = coachingKey();
+  try {
+    const r = await fetch('/api/coaching?session=' + encodeURIComponent(key));
+    if (!r.ok) throw new Error('Coaching could not be loaded.');
+    const report = await r.json();
+    if (key === coachingKey()) {
+      const changed = JSON.stringify(C.report) !== JSON.stringify(report) || C.key !== key;
+      C.report = report; C.key = key; C.error = null;
+      if (changed && S.tab === 'engineer') S.dataDirty = true;
+    }
+  } catch (e) { C.error = e.message; }
+  setTimeout(pollCoaching, 2500);
+}
+async function coachUpdate(fields) {
+  const key = coachingKey();
+  try {
+    const r = await fetch('/api/coaching', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session:key,...fields})});
+    const result = await r.json(); if (!r.ok || result.error) throw new Error(result.error || 'Could not save feedback.');
+    if (key !== coachingKey()) return;
+    C.error = null;
+    if (C.report) C.report.worker_status = 'queued';
+  } catch(e) { C.error = e.message; }
+  if (S.tab === 'engineer') renderTab();
+}
+// Visual coaching components use recorded values; illustrations are explicitly practice cues.
+function svgNode(name, attrs={}, text) {
+  const node=document.createElementNS('http://www.w3.org/2000/svg',name);
+  for(const [key,value] of Object.entries(attrs)) node.setAttribute(key,String(value));
+  if(text!=null) node.textContent=text;
+  return node;
+}
+const ICONS={
+ engineer:'M4 17V7l5-3 6 4 5-2v11l-5 3-6-4-5 3Z M9 4v12 M15 8v12',
+ live:'M3 12h4l3-7 4 14 3-7h4', laps:'M5 5h14 M5 12h14 M5 19h14',
+ compare:'M4 7h15l-4-4 M20 17H5l4 4', speed:'M4 17a9 9 0 1 1 16 0 M12 13l5-6',
+ steer:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z M3 11h18 M12 11v10',
+ tyres:'M7 4h10v16H7Z M7 8h10 M7 16h10', brakes:'M4 6h14v12H4Z M18 10h3v4h-3 M10 9v6 M7 12h6',
+ corner:'M5 20v-8a7 7 0 0 1 7-7h8 M16 2l4 3-4 3', session:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6',
+ check:'m5 12 4 4 10-10', arrow:'M4 12h16 M14 6l6 6-6 6', flag:'M5 21V3 M5 4h14l-3 5 3 5H5',
+ info:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z M12 10v7 M12 7v.1'
+};
+function icon(name) {
+  const svg=svgNode('svg',{viewBox:'0 0 24 24',class:'icon','aria-hidden':'true',fill:'none',stroke:'currentColor','stroke-width':1.6,'stroke-linecap':'round','stroke-linejoin':'round'});
+  svg.appendChild(svgNode('path',{d:ICONS[name]||ICONS.info}));return svg;
+}
+function badge(text,tone='neutral') { return el('span','badge '+tone,text); }
+function visualMetric(label,value,detail='',tone='') {
+  const box=el('div','visual-metric '+tone);box.append(el('div','eyebrow',label),el('div','metric-value',value),el('div','metric-detail',detail));return box;
+}
+function disclosure(title,build,key) {
+  const details=el('details','disclosure');details.appendChild(el('summary','',title));
+  if(key) {
+    S.disclosures ||= {}; details.open=!!S.disclosures[key];
+    details.addEventListener('toggle',()=>{S.disclosures[key]=details.open;});
+  }
+  const body=el('div','disclosure-body');build(body);details.appendChild(body);return details;
+}
+const B = {report:null,key:null,error:null};
+async function pollBaseline() {
+  if(S.tab==='engineer') {
+    const key=coachingKey();
+    try {
+      const response=await fetch('/api/setup-baseline?session='+encodeURIComponent(key));
+      if(!response.ok)throw new Error('Setup source could not be loaded.');
+      const report=await response.json();
+      if(key===coachingKey()) { const changed=B.key!==key || JSON.stringify(B.report)!==JSON.stringify(report); B.report=report;B.key=key;B.error=null; if(changed)S.dataDirty=true; }
+    } catch(e){B.error=e.message;}
+  }
+  setTimeout(pollBaseline,4000);
+}
+async function refreshBaseline() {
+  const key=coachingKey();
+  try {
+    const response=await fetch('/api/setup-baseline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:key})});
+    if(!response.ok)throw new Error('Could not refresh the setup source.');
+    const report=await response.json();if(key!==coachingKey())return;B.report=report;B.key=key;B.error=null;S.dataDirty=true;
+  }catch(e){B.error=e.message;S.dataDirty=true;}
+}
+function baselinePanel(root,r) {
+  const sessionType=r?.session_type || S.session?.session_type || S.live?.session?.type || '';
+  const practice=/practice/i.test(sessionType);
+  const build=parent=>{
+    const source=B.key===coachingKey()?B.report:null;
+    const currentTrack=isSaved()?S.session?.track:S.live?.session?.track;
+    const currentWet=['light rain','heavy rain','storm'].includes(isSaved()?S.session?.weather:S.live?.session?.weather);
+    const matched=source && (!source.context || source.context.track===currentTrack && source.context.conditions===(currentWet?'wet':'dry') && source.context.goal===(r?.goal||'qualifying'));
+    const panel=el('section','visual-panel baseline-panel');const head=el('div','panel-head');
+    head.append(el('h2','','Track starting setup'));const refresh=el('button','button quiet','Find / refresh');refresh.addEventListener('click',refreshBaseline);head.append(refresh);panel.append(head);
+    const goal=el('div','baseline-goal');goal.append(el('span','muted','Practice for'));
+    for(const [value,label] of [['qualifying','Qualifying pace'],['race','Race stint']]) { const button=el('button','button quiet'+((r?.goal||'qualifying')===value?' active':''),label);button.disabled=isSaved() || !sessionType || !!(r?.trial && r.trial.status!=='evaluated');button.setAttribute('aria-pressed',String((r?.goal||'qualifying')===value));button.addEventListener('click',()=>coachUpdate({goal:value}));goal.append(button); } panel.append(goal);
+    if(!matched || !source?.values) {
+      panel.append(el('p','muted',B.error || (matched?source?.message:null) || 'Finding a published setup for this track and car…'));
+      if(matched && source?.context)panel.append(badge(`F1 ${source.context.year} · ${source.context.conditions}`));
+      parent.append(panel);return;
+    }
+    const tags=el('div','condition-tags');tags.append(badge(`F1 ${source.context.year} · ${source.context.track}`),badge(source.context.conditions),badge(source.metadata.Session+' setup'));
+    if(source.session_fallback)tags.append(badge('Requested session unavailable','caution'));
+    if(source.stale)tags.append(badge('Cached · refresh recommended','caution'));
+    if(source.status==='refreshing')tags.append(badge('Checking source…'));
+    panel.append(tags);
+    const values=source.values,summary=el('div','baseline-summary');
+    for(const [name,keys] of [['Wings',['frontWing','rearWing']],['Differential',['onThrottle','offThrottle']],['Suspension',['frontSuspension','rearSuspension']],['Brakes',['brakePressure','brakeBias']]]) {
+      const item=el('div');item.append(el('span','eyebrow',name),el('b','',keys.map(k=>values[k]??'—').join(' / ')),el('span','muted',name==='Brakes'?'Pressure / front bias · %':name==='Differential'?'On / off throttle · %':'Front / rear'));summary.append(item);
+    }panel.append(summary);
+    const sourceLine=el('p','source-line');
+    const link=el('a','',source.source);link.href=source.url;link.rel='noopener noreferrer';sourceLine.append(link,document.createTextNode(` · ${source.metadata.Team} · ${source.published}`));panel.append(sourceLine);
+    const warnings=[];
+    if(source.mismatches?.length)warnings.push('Source uses different '+source.mismatches.join(' and ')+'.');
+    warnings.push(source.note);if(source.message)warnings.push(source.message);
+    panel.append(el('p','muted baseline-note',warnings.join(' ')));
+    let changes=0;for(const row of source.menu||[])if(row.value!=null && row.current!=null && Math.abs(row.value-row.current)>.015)changes++;
+    panel.append(disclosure(`Setup menu · ${changes} recorded values differ`,body=>{
+      body.append(el('p','muted','Apply the published values in the garage before your baseline laps. The app reads the game setup; it does not change it.'));
+      const grid=el('div','baseline-menu');
+      for(const row of source.menu||[]) {
+        const line=el('div','baseline-setting');line.setAttribute('aria-label',`${row.label}: recorded ${row.current??'unknown'}, published ${row.value??'not provided'}`);line.append(el('span','',row.label));
+        const changed=row.value!=null && row.current!=null && Math.abs(row.value-row.current)>.015;
+        const value=el('div','setup-values');if(changed)value.append(el('span','muted',Number(row.current.toFixed(2))),icon('arrow'));
+        const suffix=row.key.includes('TyrePressure')?' psi':/Camber|Toe/.test(row.key)?'°':/Throttle|brake|engine/.test(row.key)?'%':'';
+        value.append(el('b',changed?'proposed':'',row.value==null?'Keep current':Number(row.value.toFixed(2))+suffix));line.append(value);grid.append(line);
+      }body.append(grid);
+      for(const note of source.missing||[])body.append(el('p','muted',note));
+      body.append(el('p','muted',source.selection));body.append(el('p','muted',`Source controls: ${source.metadata.Steering} · TC ${source.metadata['Traction Control']} · ABS ${source.metadata['Anti-Lock Brakes']}. Checked ${new Date(source.fetched_at*1000).toLocaleDateString()}.`));
+    },'baseline-menu'));
+    if(practice) {
+      const count=r?.setup_review?.count||0;const progress=el('div','baseline-progress');
+      for(let i=0;i<3;i++)progress.append(el('span',i<count?'complete':'',i<count?'✓':i+1));
+      progress.append(el('div','',r?.setup_review?.message || 'Apply the baseline, then drive three comparable clean laps.'));panel.append(progress);
+    }parent.append(panel);
+  };
+  if((practice && (r?.comparable_laps?.length||0)<3) || !sessionType)build(root);else root.append(disclosure('Track starting setup',build,'baseline'));
+}
+function conditionTags(parent,r) {
+  const bar=el('div','condition-tags');
+  if(!r.setup_history?.length) bar.appendChild(badge('Setup history missing','caution'));
+  if(r.uncertainties?.some(x=>x.includes('fuel or tyre'))) bar.appendChild(badge('Some lap conditions missing','caution'));
+  if(r.uncertainties?.some(x=>x.includes('incident'))) bar.appendChild(badge('Incident causes unknown','caution'));
+  if(r.uncertainties?.some(x=>x.includes('classification'))) bar.appendChild(badge('Result unconfirmed','caution'));
+  if(bar.children.length) parent.appendChild(bar);
+}
+function practiceSteps(parent,r) {
+  const trial=r.trial, base=trial?.baseline_laps?.length || Math.min(3,r.comparable_laps?.length || 0);
+  const tested=Math.min(3,trial?.test_laps?.length || 0);
+  const applied=['collecting','evaluated'].includes(trial?.status);
+  const row=el('div','practice-steps');
+  for(const [name,value,complete] of [['Baseline',`${base}/3 laps`,base>=3],['Change',applied?'Detected':'In the garage',applied],['Test',`${tested}/3 laps`,tested>=3],['Decision',trial?.status==='evaluated'?'Ready':'Pending',trial?.status==='evaluated']]) {
+    const step=el('div','practice-step'+(complete?' done':''));step.append(icon(complete?'check':'laps'),el('b','',name),el('span','',value));row.appendChild(step);
+  }
+  parent.appendChild(row);
+}
+function coachingComparison(o) {
+  S.ref=o.reference_lap;S.autoRef=false;S.cmp=o.supporting_laps.at(-1);S.cursor=o.start_m;
+  fetchTrace(S.ref);fetchTrace(S.cmp);S.tab='speed';renderTabs();renderTab(true);
+}
+function trackFocus(parent,r) {
+  const evidence=r.proposal?.evidence || r.trial?.evidence;
+  const reference=r.laps?.filter(l=>r.comparable_laps?.includes(l.lap)).sort((a,b)=>a.time_ms-b.time_ms)[0];
+  const o=evidence?.start_m!=null && reference?{...evidence,reference_lap:reference.lap}:r.opportunity;
+  parent.appendChild(el('div','eyebrow','Where to practise'));
+  if(!o) {
+    const dots=el('div','baseline-dots');
+    for(let i=0;i<3;i++) {const dot=el('span',i<(r.comparable_laps?.length || 0)?'complete':'',String(i+1));dots.appendChild(dot);}
+    const ready=(r.comparable_laps?.length||0)>=3;parent.append(dots,el('h3','',ready?'Baseline ready':'Build a clean baseline'),el('p','muted',ready?'Tell the engineer how the car feels, or compare your inputs.':'Three laps · same setup · similar conditions'));return;
+  }
+  const t=trace(o.reference_lap);if(!t?.loaded && !t?.fetching) fetchTrace(o.reference_lap);
+  const points=lapXY(t), svg=svgNode('svg',{viewBox:'0 0 340 178',class:'focus-track',role:'img','aria-label':`Recorded racing line with the ${o.start_m} to ${o.end_m} metre practice section highlighted`});
+  if(points?.length) {
+    const pts=points.filter((p,i)=>i%3===0 || p.d>=o.start_m && p.d<=o.end_m);
+    const xs=pts.map(p=>p.x),zs=pts.map(p=>p.z);
+    const loX=Math.min(...xs),loZ=Math.min(...zs),dx=Math.max(1,Math.max(...xs)-loX),dz=Math.max(1,Math.max(...zs)-loZ),scale=Math.min(292/dx,146/dz);
+    const project=p=>[(340-dx*scale)/2+(p.x-loX)*scale,178-(178-dz*scale)/2-(p.z-loZ)*scale];
+    const path=items=>items.map((p,i)=>{const[x,y]=project(p);return `${i?'L':'M'}${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');
+    svg.appendChild(svgNode('path',{d:path(pts),fill:'none',stroke:'#344356','stroke-width':4,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    const focus=pts.filter(p=>p.d>=o.start_m && p.d<=o.end_m);
+    if(focus.length>1) svg.appendChild(svgNode('path',{d:path(focus),fill:'none',stroke:'var(--cmp)','stroke-width':7,'stroke-linecap':'round','stroke-linejoin':'round'}));
+    const point=focus[Math.floor(focus.length/2)];
+    if(point) {const[x,y]=project(point);svg.appendChild(svgNode('circle',{cx:x,cy:y,r:10,fill:'none',stroke:'var(--cmp)','stroke-width':1,opacity:.6}));}
+    parent.appendChild(svg);
+  } else {
+    const length=S.session?.track_length_m || S.live?.session?.track_length_m || 0;
+    if(length>0) {
+      svg.appendChild(svgNode('line',{x1:20,x2:320,y1:82,y2:82,stroke:'#344356','stroke-width':5}));
+      svg.appendChild(svgNode('line',{x1:20+300*o.start_m/length,x2:20+300*o.end_m/length,y1:82,y2:82,stroke:'var(--cmp)','stroke-width':9}));
+      svg.appendChild(svgNode('text',{x:20,y:113,fill:'var(--muted)','font-size':12},'Start'));
+      svg.appendChild(svgNode('text',{x:320,y:113,'text-anchor':'end',fill:'var(--muted)','font-size':12},'Finish'));
+      parent.appendChild(svg);
+    }
+    parent.appendChild(el('p','muted',t?.fetching?'Loading the recorded line…':'Location by distance; no map recorded.'));
+  }
+  const numbers=el('div','focus-numbers');numbers.append(o.loss_ms!=null?visualMetric('Repeated loss',`+${(o.loss_ms/1000).toFixed(2)}s`,'Observed · not a promised gain','orange'):visualMetric('Supporting laps',String(o.supporting_laps.length),'Repeated input cue','orange'),visualMetric('Track section',`${o.start_m}–${o.end_m}`,'metres from the start'));
+  parent.appendChild(numbers);
+  const button=el('button','button secondary','Compare inputs');button.appendChild(icon('arrow'));button.addEventListener('click',()=>coachingComparison(o));parent.appendChild(button);
+}
+function lapTimeline(parent,records,rawLaps=[]) {
+  if(!records?.length)return;
+  const section=el('section','visual-panel lap-timeline');
+  const heading=el('div','panel-head');heading.append(el('h2','','Lap rhythm'),el('span','muted','Relative pace · shorter = faster'));section.appendChild(heading);
+  const key=el('div','chart-key');
+  for(const [name,cls] of [['Clean','clean'],['Excluded','excluded'],['Pit vicinity','pit']]) {const item=el('span','');item.append(el('i',cls),document.createTextNode(name));key.appendChild(item);}
+  section.appendChild(key);
+  const pits=new Set();let stops=0;
+  for(const raw of rawLaps) {if(Number(raw.pit_stops)>stops){pits.add(raw.lap-1);pits.add(raw.lap);} if(raw.pit_stops!=='' && raw.pit_stops!=null)stops=Number(raw.pit_stops);}
+  const lo=Math.min(...records.filter(l=>l.time_ms>0).map(l=>l.time_ms)),hi=Math.max(...records.map(l=>l.time_ms));
+  const rail=el('div','lap-rail');rail.setAttribute('aria-label','Lap times and coaching eligibility');
+  for(const l of records) {
+    const pit=pits.has(l.lap)||l.reasons?.includes('pit lap'),cls=pit?'pit':l.eligible?'clean':'excluded';
+    const b=el('button','rhythm-lap '+cls+(S.coachLap===l.lap?' selected':''));
+    const description=`Lap ${l.lap}: ${fmtLap(l.time_ms)} · ${pit?'pit vicinity':l.eligible?'clean':(l.reasons||['excluded']).join(', ')}`;
+    b.title=description;b.setAttribute('aria-label',description);b.setAttribute('aria-pressed',String(S.coachLap===l.lap));
+    const bar=el('span','rhythm-bar');bar.style.height=(18+62*(l.time_ms-lo)/Math.max(1,hi-lo))+'px';
+    const raw=rawLaps.find(x=>x.lap===l.lap),compound=l.compound||raw?.compound;
+    const tyre=el('i','compound-mark '+(compound==='Soft'?'soft':compound==='Medium'?'medium':compound==='Hard'?'hard':'unknown'));
+    b.append(bar,el('span','lap-number',l.lap),tyre);b.addEventListener('click',()=>{S.coachLap=S.coachLap===l.lap?null:l.lap;renderTab();});rail.appendChild(b);
+  }
+  section.appendChild(rail);
+  const selected=records.find(x=>x.lap===S.coachLap);
+  const status=el('div','rhythm-selection');
+  if(selected) {status.append(badge(`Lap ${selected.lap}`),el('strong','',fmtLap(selected.time_ms)),el('span','',selected.eligible?'Clean · eligible for coaching':selected.reasons.join(' · ')));}
+  else status.appendChild(el('span','muted','Select a lap for details · tyre colours beneath each bar'));
+  section.appendChild(status);
+  const stints=el('div','stint-rail');let groups=[];
+  for(const l of records) {const comp=(rawLaps.find(x=>x.lap===l.lap)?.compound || l.compound || 'Unknown');if(groups.at(-1)?.compound===comp)groups.at(-1).count++;else groups.push({compound:comp,count:1});}
+  for(const group of groups) {const strip=el('div','stint '+group.compound.toLowerCase(),group.compound);strip.style.flex=group.count;strip.title=`${group.count} recorded laps`;stints.appendChild(strip);}
+  section.appendChild(stints);parent.appendChild(section);
+}
+function teachingCue(parent) {
+  const row=el('div','teaching-cue');
+  for(const [name,path] of [['Brake straight','M12 37V9 M5 17l7-8 7 8'],['Ease off','M4 34V10 M13 34V16 M22 34V23 M31 34V29'],['Turn in','M8 37V23q0-13 15-13h11 M27 3l7 7-7 7']]) {
+    const item=el('div','cue');const svg=svgNode('svg',{viewBox:'0 0 40 44',fill:'none',stroke:'currentColor','stroke-width':3,'stroke-linecap':'round','aria-hidden':'true'});svg.appendChild(svgNode('path',{d:path}));item.append(svg,el('span','',name));row.appendChild(item);
+  }
+  parent.appendChild(row);parent.appendChild(el('span','muted small','Practice cue · not a telemetry trace'));
+}
+R.engineer = root => {
+  const r=C.key===coachingKey()?C.report:null;
+  const head=el('div','engineer-toolbar');head.appendChild(badge(isSaved()?'Session review':'Live coaching'));
+  const refresh=el('button','button quiet','Refresh notes');refresh.disabled=!r?.lap_count || r?.ai?.status==='running' || r?.worker_status==='queued' || r?.worker_status==='analysing';refresh.addEventListener('click',()=>coachUpdate({}));head.appendChild(refresh);root.appendChild(head);
+  if(C.error)root.appendChild(el('div','inline-notice',C.error));
+  baselinePanel(root,r);
+  if(!r?.lap_count) {
+    const empty=el('section','visual-panel onboarding');empty.append(icon('flag'),el('h2','',r?'Start with three clean laps':'Loading your session'),el('p','muted',r?'Drive out, warm the tyres, then complete three timed laps.':'Reading the recording…'));
+    if(r){const dots=el('div','baseline-dots');for(let i=1;i<=3;i++)dots.appendChild(el('span','',i));empty.appendChild(dots);}root.appendChild(empty);return;
+  }
+  const best=r.laps?.filter(l=>l.eligible).sort((a,b)=>a.time_ms-b.time_ms)[0], own=r.final_classification?.find(x=>x.you);
+  const strip=el('div','metric-strip');
+  const practice=/practice/i.test(r.session_type||'');
+  strip.append(practice?visualMetric('Practice goal',r.goal==='race'?'Race pace':'Qualifying','Three-lap setup review'):visualMetric('Result',own?`P${own.position}`:r.final_classification?.length?'Recorded':'—',own?`${own.stops} ${own.stops===1?'stop':'stops'} · ${own.penalties_s}s penalties`:'No confirmed finish'),visualMetric('Best clean lap',best?fmtLap(best.time_ms):'—',best?`Lap ${best.lap}`:'Baseline needed','violet'),visualMetric('Clean laps',`${r.eligible_count}/${r.lap_count}`,'Eligible for coaching'),visualMetric('Pace spread',r.debrief?.spread_ms!=null?`${(r.debrief.spread_ms/1000).toFixed(2)}s`:'—',`${r.comparable_laps?.length||0} comparable laps`));
+  const cleanbar=el('div','quality-bar');for(let i=0;i<r.lap_count;i++)cleanbar.appendChild(el('i',i<r.eligible_count?'filled':''));strip.children[2].appendChild(cleanbar);root.appendChild(strip);
+  const grid=el('div','coach-grid');const action=el('section','visual-panel action-panel'),focus=el('section','visual-panel focus-panel');grid.append(action,focus);root.appendChild(grid);
+  const o=r.opportunity,p=r.proposal,t=r.trial;
+  action.appendChild(el('div','eyebrow','Next action'));
+  if(t && t.status!=='evaluated') {
+    action.append(el('h2','action-title',t.status==='waiting'?'Apply one setup change':'Complete the test laps'),el('p','muted',t.instruction));
+  } else if(p) action.append(el('h2','action-title',`Test ${p.label.toLowerCase()}`),el('p','muted',p.reason));
+  else if(o) {action.append(el('h2','action-title','Make braking repeatable'),el('p','muted','Use the same marker. Keep the approach consistent for three clean laps.'));teachingCue(action);}
+  else action.append(el('h2','action-title',(r.comparable_laps?.length||0)<3?'Build a clean baseline':'Repeat your clean pace'),el('p','muted',r.next_action));
+  if(p?.evidence) {const evidence=el('div','setup-evidence');evidence.append(badge(p.trigger==='telemetry'?'From your laps':'From your feedback'),el('p','',p.evidence.summary));if(p.evidence.start_m!=null)evidence.append(el('span','muted',`${p.evidence.start_m}–${p.evidence.end_m} m · laps ${p.evidence.supporting_laps.join(' · ')}`));action.append(evidence);}
+  if(p || t) {
+    const change=t && t.status!=='evaluated'?t:p || t, values=el('div','setup-change');values.append(el('span','',change.label),el('b','',change.current),icon('arrow'),el('b','proposed',change.proposed));action.appendChild(values);practiceSteps(action,r);
+    if(p && (!t || t.status==='evaluated')) {const button=el('button','button primary','Start this test');button.disabled=isSaved();button.appendChild(icon('arrow'));button.addEventListener('click',()=>coachUpdate({start_trial:true}));action.appendChild(button);}
+  }
+  if(t) {
+    const verdict=el('div','test-verdict');
+    if(t.delta_ms!=null)verdict.appendChild(el('b',t.delta_ms<0?'positive':'negative',`${t.delta_ms>0?'+':''}${(t.delta_ms/1000).toFixed(2)}s`));
+    verdict.appendChild(el('span','',t.message));action.appendChild(verdict);
+    if(t.best_delta_ms!=null) {const bestDelta=el('div','confidence-row');bestDelta.append(badge('Fastest test lap'),el('b',t.best_delta_ms<0?'positive':'negative',`${t.best_delta_ms>0?'+':''}${(t.best_delta_ms/1000).toFixed(2)}s`),el('span','muted','vs fastest baseline lap'));action.append(bestDelta);}
+    const end=el('button','button quiet','End test');end.disabled=isSaved();end.addEventListener('click',()=>coachUpdate({clear_trial:true}));action.appendChild(end);
+  }
+  const status=el('div','confidence-row');status.append(badge(r.comparable_laps?.length>=3?'Comparable evidence':'More laps needed',r.comparable_laps?.length>=3?'positive':'neutral'));
+  if(r.comparable_laps?.length)status.appendChild(el('span','muted',`Laps ${r.comparable_laps.join(' · ')}`));action.appendChild(status);
+  if(p){action.append(el('p','muted',p.confidence),el('p','muted',p.downside));}
+  conditionTags(action,r);trackFocus(focus,r);
+  if(!isSaved() && /practice/i.test(r.session_type||'')) {
+    const feedback=el('section','visual-panel feedback-panel');feedback.appendChild(el('h2','','How does it feel?'));
+    const options=el('div','feedback-options');
+    for(const [value,label,name] of [['none','Feels OK','check'],['wont_turn','Won’t turn','corner'],['rear_slides','Rear slides','steer'],['locks_up','Wheels lock','brakes']]) {const button=el('button','feedback-option'+(r.symptom===value?' active':''));button.append(icon(name),el('span','',label));button.setAttribute('aria-pressed',String(r.symptom===value));button.addEventListener('click',()=>coachUpdate({symptom:value}));options.appendChild(button);}
+    feedback.appendChild(options);root.appendChild(feedback);
+    if(r.setup_review?.ready && !p && !t)root.append(el('p','muted',r.setup_review.message));
+  }
+  lapTimeline(root,r.laps,S.laps);
+  const insights=el('div','insight-grid');
+  const strength=el('section','visual-panel');strength.append(el('div','eyebrow','What worked'),el('h2','',best?`Lap ${best.lap} · ${fmtLap(best.time_ms)}`:'Baseline still needed'),el('p','muted','Your fastest eligible lap. Use it as an example, not proof of competitive pace.'));
+  const review=el('section','visual-panel');review.append(el('div','eyebrow','What to review'),el('h2','','Consistency first'),el('p','muted',r.debrief?.biggest_opportunity || 'Build a clean baseline.'));insights.append(strength,review);root.appendChild(insights);
+  const ai=r.ai||{};
+  const notesLabel=ai.status==='running'?'Engineer notes · generating…':ai.status==='ready'?`Engineer notes · through lap ${ai.lap_count || r.lap_count}`:'Engineer notes';
+  root.appendChild(disclosure(notesLabel,body=>{
+    if(ai.status==='ready')for(const [title,text] of [['Summary',ai.summary],['Driving',ai.driving_tip],['Next practice',ai.next_practice],['Uncertainty',ai.uncertainty]]){body.append(el('h3','',title),el('p','',text));}
+    else body.appendChild(el('p','muted',ai.status==='running'?'Your explanation is generating. The calculated guidance above is ready.':ai.error || 'Notes appear after enough laps are recorded.'));
+    if(ai.stale)body.appendChild(el('p','muted','Newer laps are available in the visuals above.'));
+  },'coach-notes'));
+  if(r.final_classification?.length)root.appendChild(disclosure('Race classification',body=>{
+    for(const row of r.final_classification) {const line=el('div','classification-row'+(row.you?' own':''));line.append(el('b','place',`P${row.position}`),el('span','',row.you?'You':row.driver),el('strong','num',row.best_lap),el('span','muted',`${row.stops} stops · ${row.penalties_s}s`));body.appendChild(line);}
+  },'classification'));
+  root.appendChild(disclosure('Evidence & setup',body=>{
+    if(r.uncertainties?.length){body.appendChild(el('h3','','Data limits'));for(const text of r.uncertainties)body.appendChild(el('p','muted',text));}
+    body.appendChild(el('h3','','Lap eligibility'));
+    for(const lap of r.laps||[]) {const line=el('div','evidence-row');line.append(badge(`L${lap.lap}`,lap.eligible?'positive':'neutral'),el('span','',lap.eligible?'Clean':lap.reasons.join(' · ')));body.appendChild(line);}
+    body.appendChild(el('h3','','Current setup · game menu order'));
+    const settings=el('div','setup-grid');
+    for(const setting of r.setup_menu||[])if(setting.value!=null){const item=el('div','setting');item.append(el('span','',setting.label),el('b','num',Number(setting.value.toFixed(2))));settings.appendChild(item);}body.appendChild(settings);
+    if(r.setup_history?.length){body.appendChild(el('h3','','Setup history'));for(const revision of r.setup_history)body.appendChild(el('p','muted',`Setup ${revision.revision} · lap ${revision.lap??'?'} · ${revision.session_time_s.toFixed(1)}s`));}
+    if(r.incidents?.length){body.appendChild(el('h3','','Recorded events'));for(const event of r.incidents)body.appendChild(el('p','muted',`Lap ${event.lap??'?'} · ${event.description}`));}
+    body.appendChild(el('p','muted','The full debrief is saved with this recording as debrief.md.'));
+  },'coach-evidence'));
+};
+
 // Field lap overlays use their own traces, independent of the personal lap tower.
 const O = {context: '', catalog: null, error: '', driver: null, ownLap: null, rivalLap: null,
   own: null, rival: null, loadedKey: '', pending: false, range: 'all'};
@@ -713,7 +1161,7 @@ function renderOverlays(root) {
   selector('Your lap','overlay-own',own.laps.map(l=>[l.lap,overlayLabel(l)]),O.ownLap,v=>O.ownLap=Number(v));
   selector('Their lap','overlay-rival',rival.laps.map(l=>[l.lap,overlayLabel(l)]),O.rivalLap,v=>O.rivalLap=Number(v));
   root.appendChild(bar);
-  root.appendChild(el('p','compare-note','Blue = you · Orange = opponent. Both curves use distance from the start line, so braking and throttle line up at the same corner. Recent six laps per driver are retained; partial, invalid, and pit laps are labelled.'));
+  root.appendChild(el('p','compare-note','Compare both drivers at the same distance. Partial recordings and invalid laps are labelled.'));
   if (!O.own?.rows?.length || !O.rival?.rows?.length) { root.appendChild(el('p','compare-note','Loading the selected laps…')); return; }
   const a=O.own.rows,b=O.rival.rows;
   let start=Math.max(a[0][0],b[0][0]), end=Math.min(a.at(-1)[0],b.at(-1)[0]);
@@ -744,7 +1192,7 @@ function renderOverlays(root) {
 }
 
 R.compare = (root) => {
-  root.appendChild(el('h2', '', 'You vs others'));
+
   if (isSaved()) { renderOverlays(root); return; }
   const L = S.live;
   if (L && !L.connected) root.appendChild(el('p', 'compare-note', 'No live signal — showing the last received values.'));
@@ -882,7 +1330,8 @@ R.live = (root) => {
 R.laps = (root) => {
   if (!S.laps.length) { root.appendChild(el('div', 'empty', 'No completed laps yet.')); return; }
   const bs = bestSectors(), best = bestLap();
-  root.appendChild(el('h2', '', 'All laps'));
+  const metrics = el('div', 'metric-strip'); metrics.append(visualMetric('Best lap', best?.time || '—', best ? `Lap ${best.lap}` : ''), visualMetric('Timed laps', String(S.laps.length), ''), visualMetric('Valid laps', String(S.laps.filter(l => l.valid).length), 'Game validity'), visualMetric('Clean laps', C.report ? String(C.report.eligible_count) : '—', 'Eligible for coaching')); root.append(metrics);
+  lapTimeline(root, C.report?.laps || S.laps.map(l => ({...l, eligible: l.valid, reasons: l.valid ? [] : ['Invalid lap']})), S.laps);
   const t = el('table'); t.innerHTML = '<tr><th>Lap</th><th>Time</th><th>vs best</th><th>S1</th><th>S2</th><th>S3</th><th>Valid</th><th>Tyre</th><th>Age</th><th>Wear FL/FR/RL/RR</th><th>Fuel</th><th>ERS</th><th>Pos</th></tr>';
   for (const l of S.laps) {
     const tr = el('tr', 'click' + (l.lap === S.ref ? ' sel' : ''));
@@ -894,19 +1343,19 @@ R.laps = (root) => {
       `<td class="muted">${l.fuel_kg != null ? l.fuel_kg.toFixed(1) + ' kg' : ''}</td><td class="muted">${l.ers_pct != null ? Math.round(l.ers_pct) + '%' : ''}</td><td class="muted">${l.position ?? ''}</td>`;
     tr.addEventListener('click', () => selectRef(l.lap)); t.appendChild(tr);
   }
-  root.appendChild(t);
+  const lapDetails = disclosure(`Lap data · ${S.laps.length} laps`, body => { const scroll = el('div', 'table-scroll'); scroll.append(t); body.append(scroll); }, 'lap-data');
   const ideal = bs.every(x => x) ? bs.reduce((a, b) => a + b, 0) : null;
-  const sub = el('div', 'toolbar'); sub.style.marginTop = '12px'; sub.textContent = `Best lap ${best ? best.time + ' (lap ' + best.lap + ')' : '--'} · best sectors ${bs.map(fmtLap).join(' / ')} · ideal lap ${fmtLap(ideal)}${ideal && best ? ' · ' + fmtDelta(best.time_ms - ideal) + ' left on the table' : ''}`;
-  root.appendChild(sub);
+  const sub = el('div', 'toolbar'); sub.style.marginTop = '12px'; sub.textContent = `Best lap ${best ? best.time + ' (lap ' + best.lap + ')' : '--'} · best sectors ${bs.map(fmtLap).join(' / ')} · sector composite ${fmtLap(ideal)} · ${C.report?.comparable_laps?.length >= 3 ? 'similar conditions' : 'conditions may differ'}`;
+  lapDetails.appendChild(sub);
   // wear + fuel per lap
   const wrap = el('div', 'two'); root.appendChild(wrap);
   const w1 = el('div'); const w2 = el('div'); wrap.append(w1, w2);
   const x = S.laps.map(l => l.lap);
   const ch = new Chart(w1, { name: 'Tyre wear by lap · %', height: 170, yMin: 0, yFmt: f0, step: false, xInt: true });
-  drawChart(ch, [{ x, y: S.laps.map(l => l.wear_fl), color: '#57c7f5', label: 'FL' }, { x, y: S.laps.map(l => l.wear_fr), color: '#ff9f43' }, { x, y: S.laps.map(l => l.wear_rl), color: '#b15cff' }, { x, y: S.laps.map(l => l.wear_rr), color: '#37d67a' }], Math.min(...x), Math.max(...x) + 0.01, null);
+  drawChart(ch, [{ x, y: S.laps.map(l => l.wear_fl), color: '#57c7f5', label: 'FL' }, { x, y: S.laps.map(l => l.wear_fr), label: 'FR', color: '#ff9f43' }, { x, y: S.laps.map(l => l.wear_rl), label: 'RL', color: '#b15cff' }, { x, y: S.laps.map(l => l.wear_rr), label: 'RR', color: '#37d67a' }], Math.min(...x), Math.max(...x) + 0.01, null);
   const ch2 = new Chart(w2, { name: 'Lap time by lap', height: 170, yFmt: v => fmtLap(v), xInt: true });
   drawChart(ch2, [{ x, y: S.laps.map(l => l.valid ? l.time_ms : null), color: '#edeff3', width: 1.8 }], Math.min(...x), Math.max(...x) + 0.01, null);
-  root.appendChild(el('div', 'toolbar', 'Wear: FL cyan · FR orange · RL purple · RR green'));
+  root.appendChild(lapDetails);
 };
 
 function needTraces(root) {
@@ -926,11 +1375,11 @@ R.speed = (root) => {
   const a = trace(S.ref), b = trace(S.cmp), sc = speedCol(), [x0, x1] = xRange();
   const c1 = new Chart(root, { name: `Speed · ${speedUnit()}`, height: 230, yFmt: f0, readout: readTwo(sc, f0, ' ' + speedUnit()) });
   drawChart(c1, [seriesFor(a, sc, '#57c7f5', { width: 1.8 }), seriesFor(b, sc, '#ff9f43', { width: 1.4 })].filter(Boolean), x0, x1, bandS2());
-  const c2 = new Chart(root, { name: 'Delta time · B minus A (seconds, negative = B is quicker)', height: 130, yFmt: v => (v >= 0 ? '+' : '') + v.toFixed(2), symmetric: true, zeroLine: true, readout: d => { const s = deltaSeries(a, b); if (!s || d == null) return ''; const i = a.idx(d); const dt = b && b.rows.length ? b.timeAt(d) - a.time[i] : null; return dt == null ? '' : `<b>${fmtDelta(dt, 2)}</b> s at ${Math.round(d)} m`; } });
+  const c2 = new Chart(root, { name: 'Time difference · B − A · s (below zero = B faster)', height: 130, yFmt: v => (v >= 0 ? '+' : '') + v.toFixed(2), symmetric: true, zeroLine: true, readout: d => { const s = deltaSeries(a, b); if (!s || d == null) return ''; const i = a.idx(d); const dt = b && b.rows.length ? b.timeAt(d) - a.time[i] : null; return dt == null ? '' : `<b>${fmtDelta(dt, 2)}</b> s at ${Math.round(d)} m`; } });
   const ds = deltaSeries(a, b); drawChart(c2, ds ? [ds] : [], x0, x1, bandS2());
-  const c3 = new Chart(root, { name: 'Throttle · A solid, B dashed', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('throttle', fpct) });
+  const c3 = new Chart(root, { name: 'Throttle · %', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('throttle', fpct) });
   drawChart(c3, [seriesFor(a, 'throttle', '#37d67a', { width: 1.5 }), seriesFor(b, 'throttle', '#37d67a', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
-  const c4 = new Chart(root, { name: 'Brake · A solid, B dashed', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
+  const c4 = new Chart(root, { name: 'Brake · %', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
   drawChart(c4, [seriesFor(a, 'brake', '#ff4a4a', { width: 1.5 }), seriesFor(b, 'brake', '#ff4a4a', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
   scrubber(root, x1);
 };
@@ -951,8 +1400,8 @@ const WHEELCOLORS = ['#57c7f5', '#ff9f43', '#b15cff', '#37d67a'];
 function fourWheel(root, name, cols, fmt, unit, height = 170) {
   const a = trace(S.ref), [x0, x1] = xRange();
   if (a && !cols.some(cn => a.has(cn))) { root.appendChild(el('div', 'toolbar', `${name}: not recorded in this session (older recorder version).`)); return; }
-  const c = new Chart(root, { name: `${name} · FL cyan · FR orange · RL purple · RR green`, height, yFmt: fmt, readout: d => { if (d == null || !a) return ''; return ['FL', 'FR', 'RL', 'RR'].map((w, i) => `<span style="color:${WHEELCOLORS[i]}">${w} <b>${fmt(a.at(cols[i], d))}</b>${unit}</span>`).join(' &nbsp; '); } });
-  drawChart(c, cols.map((cn, i) => seriesFor(a, cn, WHEELCOLORS[i], { width: 1.4 })).filter(Boolean), x0, x1, bandS2());
+  const c = new Chart(root, { name, height, yFmt: fmt, readout: d => { if (d == null || !a) return ''; return ['FL', 'FR', 'RL', 'RR'].map((w, i) => `<span style="color:${WHEELCOLORS[i]}">${w} <b>${fmt(a.at(cols[i], d))}</b>${unit}</span>`).join(' &nbsp; '); } });
+  drawChart(c, cols.map((cn, i) => seriesFor(a, cn, WHEELCOLORS[i], { width: 1.4, label: ['FL', 'FR', 'RL', 'RR'][i] })).filter(Boolean), x0, x1, bandS2());
 }
 R.tyres = (root) => {
   lapChips(root); if (!needTraces(root)) return;
@@ -970,7 +1419,7 @@ R.brakes = (root) => {
   const tf = v => v == null ? '--' : String(temp(v));
   fourWheel(root, `Brake temperature · °${tempUnit()}`, ['brake_temp_fl', 'brake_temp_fr', 'brake_temp_rl', 'brake_temp_rr'], tf, '°', 200);
   const a = trace(S.ref), b = trace(S.cmp), [x0, x1] = xRange();
-  const c1 = new Chart(root, { name: 'Brake pressure · A solid, B dashed', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
+  const c1 = new Chart(root, { name: 'Brake pressure · %', height: 120, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
   drawChart(c1, [seriesFor(a, 'brake', '#ff4a4a', { width: 1.5 }), seriesFor(b, 'brake', '#ff4a4a', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
   const c2 = new Chart(root, { name: 'ERS store · %', height: 150, yMin: 0, yMax: 100, yFmt: f0, readout: readTwo('ers_pct', f0, '%') });
   drawChart(c2, [seriesFor(a, 'ers_pct', '#57c7f5', { width: 1.6 }), seriesFor(b, 'ers_pct', '#ff9f43', { width: 1.2, dash: [4, 3] })].filter(Boolean), x0, x1, bandS2());
@@ -1043,7 +1492,7 @@ R.corner = (root) => {
       t.appendChild(tr);
     }
     right.appendChild(t);
-    right.appendChild(el('div', 'sub', 'Purple is the best of the session. Brake at / throttle at are metres from the start line — braking later and getting to full throttle earlier is quicker, as long as the minimum speed holds up. Click a lap to make it A.'));
+    right.appendChild(el('div', 'sub', 'Purple marks observed extremes. Compare section time with your inputs. Select a lap as the reference.'));
   }
 
   // ---------- traces for the selected corner
@@ -1051,9 +1500,9 @@ R.corner = (root) => {
   const x0 = c.entry, x1 = c.exit;
   const c1 = new Chart(root, { name: `Speed · ${su}`, height: 200, yFmt: f0, readout: readTwo(speedCol(), f0, ' ' + su) });
   drawChart(c1, [seriesFor(a, speedCol(), '#57c7f5', { width: 2 }), seriesFor(b, speedCol(), '#ff9f43', { width: 1.6 })].filter(Boolean), x0, x1, null);
-  const c2 = new Chart(root, { name: 'Brake · A solid, B dashed', height: 110, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
+  const c2 = new Chart(root, { name: 'Brake · %', height: 110, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('brake', fpct) });
   drawChart(c2, [seriesFor(a, 'brake', '#ff4a4a', { width: 1.8 }), seriesFor(b, 'brake', '#ff4a4a', { width: 1.3, dash: [4, 3] })].filter(Boolean), x0, x1, null);
-  const c3 = new Chart(root, { name: 'Throttle · A solid, B dashed', height: 110, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('throttle', fpct) });
+  const c3 = new Chart(root, { name: 'Throttle · %', height: 110, yMin: 0, yMax: 1, yFmt: fpct, readout: readTwo('throttle', fpct) });
   drawChart(c3, [seriesFor(a, 'throttle', '#37d67a', { width: 1.8 }), seriesFor(b, 'throttle', '#37d67a', { width: 1.3, dash: [4, 3] })].filter(Boolean), x0, x1, null);
   const c4 = new Chart(root, { name: 'Steering', height: 110, yMin: -1, yMax: 1, yFmt: v => Math.round(v * 100) + '%', zeroLine: true, readout: readTwo('steer', v => Math.round(v * 100) + '%') });
   drawChart(c4, [seriesFor(a, 'steer', '#d9b8ff', { width: 1.8 }), seriesFor(b, 'steer', '#ff9f43', { width: 1.3, dash: [4, 3] })].filter(Boolean), x0, x1, null);
@@ -1099,7 +1548,7 @@ R.corner = (root) => {
     bar.appendChild(mk('← back a turn', -1)); bar.appendChild(mk('forward a turn →', 1));
     if (S.cornerShift) { const r = el('button', 'chip', 'reset'); r.addEventListener('click', () => { S.cornerShift = 0; localStorage_set('shift:' + trackName(), 0); renderTab(); }); bar.appendChild(r); }
   } else bar.appendChild(el('span', '', `No built-in turn list for ${trackName() || 'this track'} — click ✎ to name them once and they stick.`));
-  if (b && S.cmp !== S.ref) bar.appendChild(el('span', '', `Total over corners: ${fmtDelta(totalLoss, 2)} s.`));
+  if (b && S.cmp !== S.ref) bar.appendChild(el('span', '', 'Corner windows can overlap; their differences do not add up to a lap difference.'));
   root.appendChild(bar);
   scrubber(root, xRange()[1]);
 };
@@ -1190,19 +1639,29 @@ function renderTop() {
   else if (L.connected) { conn.className = 'on'; txt.textContent = `live · ${L.packets_per_second} pkt/s`; }
   else { conn.className = 'stale'; txt.textContent = 'no data from the game'; }
   const line = $('#sessline');
-  if (isSaved()) { const v = S.session || {}; line.innerHTML = `<span style="color:var(--yellow)">saved session</span><span><b>${v.track || '?'}</b></span><span>${v.session_type || ''}</span><span>${v.weather || ''}${v.track_temp_c != null ? ' · track ' + temp(v.track_temp_c) + '°' + tempUnit() : ''}</span><span>${v.recorded ? v.recorded.replace('T', ' ') : ''}</span>`; $('#brandsub').textContent = `${L.driver_name} · ${S.savedId}`; return; }
+  if (isSaved()) { conn.className = ''; txt.textContent = 'Saved recording'; const v = S.session || {}; line.innerHTML = `<span style="color:var(--yellow)">saved session</span><span><b>${v.track || '?'}</b></span><span>${v.session_type || ''}</span><span>${v.weather || ''}${v.track_temp_c != null ? ' · track ' + temp(v.track_temp_c) + '°' + tempUnit() : ''}</span><span>${v.recorded ? v.recorded.replace('T', ' ') : ''}</span>`; $('#brandsub').textContent = 'Saved recording'; return; }
   const s = L.session;
   line.innerHTML = s ? `<span><b>${s.track}</b></span><span>${s.type}${s.is_race ? ' · ' + s.total_laps + ' laps' : ''}</span><span>${s.weather} · track ${temp(s.track_temp_c)}°${s.temp_units} · air ${temp(s.air_temp_c)}°${s.temp_units}</span>${s.safety_car !== 'none' ? '<span style="color:var(--yellow)"><b>' + s.safety_car + '</b></span>' : ''}${s.paused ? '<span style="color:var(--yellow)">paused</span>' : ''}` : '<span>waiting for a session</span>';
   $('#brandsub').textContent = s ? `${L.driver_name} · game v${L.game_version}` : 'waiting for the game';
 }
-function renderTabs() { const n = $('#tabs'); n.innerHTML = ''; for (const [id, label] of TABS) { const b = el('button', id === S.tab ? 'active' : '', label); b.addEventListener('click', () => { S.tab = id; charts.length = 0; renderTab(true); renderTabs(); }); n.appendChild(b); } }
+const PAGE_INFO = {
+ engineer: ['Your engineer', 'One next action, backed by your laps.'], live: ['Live telemetry', 'Your car and inputs, as they happen.'], laps: ['Lap history', 'See your pace, consistency and tyre changes.'], compare: ['You vs others', 'Find where the time changes.'], speed: ['Speed & inputs', 'Compare braking, throttle and pace along the lap.'], steer: ['Steering & gears', 'See how your inputs change through each corner.'], tyres: ['Tyres', 'Compare all four wheels along the lap.'], brakes: ['Brakes & energy', 'Track braking temperatures and energy use.'], corner: ['Corners', 'Select a section to compare your inputs.'], session: ['Session & setup', 'Conditions, assists and recorded car settings.']
+};
+function renderTabs() {
+ const n = $('#tabs'); n.replaceChildren();
+ for (const [label, ids] of [['Overview', ['engineer','live','laps']], ['Analyse', ['compare','speed','steer','tyres','brakes','corner']], ['', ['session']]]) {
+  const group = el('div', 'nav-group'); if (label) group.append(el('span', 'nav-label', label));
+  for (const id of ids) { const title = TABS.find(t => t[0] === id)[1]; const b = el('button', id === S.tab ? 'active' : ''); b.append(icon(id), document.createTextNode(title)); b.addEventListener('click', () => { S.tab = id; charts.length = 0; renderTab(true); renderTabs(); }); group.append(b); } n.append(group);
+ }
+}
 function renderTab(force) {
-  if (!force && S.tab === 'compare' && $('#content select:focus, #content input[type=range]:active')) return;
-  const root = $('#content');
-  const scrollY = root.scrollTop;
-  charts.length = 0; root.innerHTML = '';
-  try { R[S.tab](root); } catch (e) { root.appendChild(el('div', 'empty', 'Could not draw this tab: ' + e.message)); console.error(e); }
-  root.scrollTop = scrollY;
+ if (!force && $('#content select:focus, #content input[type=range]:active')) return;
+ const root = $('#content'), scrollY = force ? 0 : root.scrollTop;
+ $('#layout').classList.toggle('wide', ['engineer','live','laps','compare','session'].includes(S.tab));
+ charts.length = 0; root.replaceChildren();
+ const [title, subtitle] = PAGE_INFO[S.tab]; const head = el('div', 'page-head'); head.append(el('h1','',title),el('p','',subtitle)); const body = el('div','page-body'); root.append(head,body);
+ try { R[S.tab](body); if (S.tab === 'session') { for (const col of body.querySelector('.two')?.children || []) { let group; for (const child of [...col.children]) { if (child.tagName === 'H2') { group = el('section','setting-group'); col.append(group); } if (group) group.append(child); } } } } catch(e) { body.append(el('div','empty','Could not draw this tab: '+e.message)); console.error(e); }
+ root.scrollTop = scrollY;
 }
 // throttle: full re-render at most ~3 times a second, only when something changed
 function tick() {
@@ -1216,7 +1675,7 @@ function tick() {
   requestAnimationFrame(tick);
 }
 window.addEventListener('resize', () => { S.dataDirty = true; });
-renderTabs(); poll(); pollLaps(); pollSession(); pollSessions(); pollOverlays(); tick();
+renderTabs(); poll(); pollLaps(); pollSession(); pollSessions(); pollOverlays(); pollCoaching(); pollBaseline(); tick();
 </script>
 </body>
 </html>

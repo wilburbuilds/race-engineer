@@ -33,6 +33,15 @@ class FieldTraceTest(unittest.TestCase):
         self.assertEqual(lap['time_ms'],10000)
         self.assertEqual(lap['rows'][0][2:5],[200,.75,0])
         self.assertEqual(len(self.traces.snapshot()['drivers']),2)
+    def test_fastest_clean_lap_survives_recent_window(self):
+        for number in range(1,10):
+            for i in range(100):self.sample(number*100+i*.1,i*10,number)
+            for lap in self.st.lap[:2]:lap['lastLapTimeInMS']=10000+number*100
+            self.sample((number+1)*100,0,number+1)
+        records=self.traces.snapshot()['drivers'][0]['laps']
+        self.assertIn(1,[r['lap'] for r in records])
+        self.assertLessEqual(len(records),7)
+
     def test_join_midlap_gaps_and_no_extrapolation_source(self):
         self.sample(5,500); self.sample(6,600); self.sample(100,0,2)
         lap=self.traces.trace(1,1)['trace']

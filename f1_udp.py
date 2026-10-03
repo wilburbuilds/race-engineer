@@ -444,7 +444,8 @@ class RaceState:
             self.lap_tail = LAP_TAIL.unpack(data, off + MAX_CARS * LAP_DATA.size)
         elif pid == PKT_EVENT:
             ev = self._parse_event(data, off)
-            if ev:
+            self.latest_event = ev
+            if ev and ev['code'] != 'BUTN':
                 self.events.append(ev)
         elif pid == PKT_PARTICIPANTS:
             self.num_active_cars = data[off]
