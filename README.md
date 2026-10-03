@@ -1,5 +1,7 @@
 # Race Engineer for macOS
 
+a fork of my brother John's Race Engineer
+
 Installed app: `/Applications/Race Engineer.app`. A shortcut is on the Desktop.
 
 Double-click the app to start the dashboard and recorder. No Terminal, uv, separate Python installation, or browser is needed. Closing the window or choosing **Race Engineer → Quit and Save** flushes the recording and stops the backend. **Race Engineer → Open Recordings** opens the saved sessions.
